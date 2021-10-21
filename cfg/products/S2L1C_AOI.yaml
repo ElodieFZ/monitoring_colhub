@@ -1,0 +1,8 @@
+# OpenSearch query parameters
+'S2L1C':
+    platformname: 'Sentinel-2'
+    producttype: 'S2MSI1C'
+
+# Footprints
+footprints:
+    - 'colhub_aoi'

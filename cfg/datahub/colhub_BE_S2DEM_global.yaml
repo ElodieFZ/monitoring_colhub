@@ -1,0 +1,3 @@
+name: 'colhub_BE_S2DEM'
+url: 'http://ppi-distribution:8083/#/home'
+credentials: '/home/nbs/colhub/myValues.txt'

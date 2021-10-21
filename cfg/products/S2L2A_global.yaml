@@ -1,0 +1,8 @@
+# OpenSearch query parameters
+'S2L2A':
+    platformname: 'Sentinel-2'
+    producttype: 'S2MSI2A'
+
+# Footprints
+footprints:
+    - 'all'

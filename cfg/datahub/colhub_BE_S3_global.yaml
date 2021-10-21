@@ -1,0 +1,3 @@
+name: 'colhub_BE_S3'
+url: 'http://ppi-distribution:8084/#/home'
+credentials: '/home/nbs/colhub/myValues.txt'

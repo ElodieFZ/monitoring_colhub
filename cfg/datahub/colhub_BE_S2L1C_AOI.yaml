@@ -1,0 +1,3 @@
+name: 'colhub_BE_S2L1C_AOI'
+url: 'http://ppi-distribution:8089/#/home'
+credentials: '/home/nbs/colhub/myValues.txt'

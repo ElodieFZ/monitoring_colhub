@@ -1,0 +1,3 @@
+name: 's5phub'
+url: 'https://s5phub.copernicus.eu/dhus/#/home'
+credentials: '/home/nbs/colhub/myValues.txt'
