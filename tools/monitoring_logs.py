@@ -128,7 +128,7 @@ def read_logs_dhus(type, sat, area, day, logdir, outfile=None):
     if len(log_day) != 1:
         logger.error('Something strange happened, more than one log file found for one day or no log file found.')
         logger.error(log_day)
-        return 0, np.nan, np.nan, np.nan, 0
+        return 0, np.nan, np.nan, np.nan, 0, 0
     log_day = log_day[0]
 
     logger.debug(f'Checking logfile {log_day}')
