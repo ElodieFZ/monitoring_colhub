@@ -29,7 +29,7 @@ def parse_arguments():
     parser.add_argument('-d2', dest='yyyymmdd2', required=False,
                         help='Second date in range (YYYY/MM/DD). Default is first date.')
     parser.add_argument('-cl', dest='colhub_log_dir', required=False, help="BE logs directory.",
-                        default='/lustre/storeB/project/ESAcolhub/production-backend-global')
+                        default=pathlib.Path('/lustre/storeB/project/ESAcolhub/production-backend-global'))
     parser.add_argument('-o', dest='out_file', required=False, help="Output csv results file.",
                         default=pathlib.Path('/home/nbs/colhub/monitoring/BE_global.csv'))
     parser.add_argument('-sl', dest='script_log_dir', required=False, help="script logs directory.",
@@ -66,9 +66,11 @@ if __name__ == '__main__':
     out = []
     for product in products:
         for date in pd.date_range(date1, date2):
-            nb, min, max, median, deleted = monitoring_logs.read_logs_dhus(product, args.area, date, pathlib.Path(args.colhub_log_dir))
+            nb, min, max, median, deleted = monitoring_logs.read_logs_dhus\
+                ('BE', product, args.area, date, pathlib.Path(args.colhub_log_dir))
             out.append({'product': product, 'log_date': date, 'nb_ingested': nb,
-                        'timeliness_min': min, 'timeliness_max': max, 'timeliness_median': median, 'products_deleted': deleted})
+                        'timeliness_min': min, 'timeliness_max': max, 'timeliness_median': median,
+                        'products_deleted': deleted})
 
     if args.out_file:
         pd.DataFrame(out).to_csv(args.out_file, index=False, mode='a', header=None)
