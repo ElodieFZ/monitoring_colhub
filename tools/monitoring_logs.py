@@ -26,6 +26,25 @@ def get_success_lines(myfile, pattern='.zip'):
     return ok
 
 
+def get_sensing_time(product_name, sat):
+
+    if sat == 'S2DEM':
+        pattern = product_name.split('_')[-6]
+    elif sat == 'S3':
+        pattern = product_name[16:31]
+    elif sat == 'S5p':
+        pattern = product_name[20:35]
+    else:
+        pattern = product_name.split('_')[-5]
+
+    try:
+        return dt.datetime.strptime(pattern, '%Y%m%dT%H%M%S')
+    except ValueError:
+        logger.error('Problem trying to get sensing information from product name.')
+        logger.error(f'Product name: {product_name}, sat: {sat}')
+        return None
+
+
 def products_evicted(myfile):
     out = 0
     with open(myfile) as f:
@@ -67,7 +86,8 @@ def read_logs_dhus(sat, area, day, logdir):
         successes = get_success_lines(log_day, '.nc')
     else:
         successes = get_success_lines(log_day)
-    logger.info(f'{len(successes)} products successfully downloaded.')
+    nb_successes = len(successes)
+    logger.info(f'{nb_successes} products successfully downloaded.')
 
     deleted = products_evicted(log_day)
     logger.info(f'{deleted} products successfully evicted.')
@@ -89,32 +109,21 @@ def read_logs_dhus(sat, area, day, logdir):
 
     # Get product name, and sensing date from it
     log_df['product_name'] = log_df['all'].apply(
-        lambda x: sat[0:2] + x.rpartition(sat[0:2])[2].split('.zip')[0])
+        lambda x: x.split('[INFO ] Product \'')[1].split('.')[0])
 
-    sat_name_from_product = log_df['product_name'].apply(lambda x: x[0:2])
-    if not (sat_name_from_product == sat[0:2]).all():
+    log_df["sat_name_ok"] = log_df['product_name'].apply(lambda x: x[0:2] == sat[0:2])
+    if not log_df["sat_name_ok"].all():
         logger.error('Problem with products, some product_names do not match the satellite name.')
-        return np.nan, np.nan, np.nan, np.nan, deleted
+        logger.error(f'Actually, only {nb_successes} products successfully downloaded, the rest is ???.')
+        logger.error('Products that have been ingested: ')
+        logger.error(log_df[~log_df['sat_name_ok']]['product_name'])
 
-    if sat == 'S2DEM':
-        try:
-            log_df['sensing_date'] = log_df['product_name'].apply(
-                lambda x: dt.datetime.strptime(x.split('_')[-6], '%Y%m%dT%H%M%S'))
-        # some S2DEM are missing the DTERRENG data suffix ...
-        # TODO: create function that includes the exception,
-        # so that we only loose the timeliness information for one or several products instead of the whole df
-        except ValueError:
-            logger.error("Problem trying to read sensing time information, so returning NaNs.")
-            return len(successes), np.nan, np.nan, np.nan, deleted
-    elif sat == 'S3':
-        log_df['sensing_date'] = log_df['product_name'].apply(
-            lambda x: dt.datetime.strptime(x[16:31], '%Y%m%dT%H%M%S'))
-    elif sat == 'S5p':
-        log_df['sensing_date'] = log_df['product_name'].apply(
-            lambda x: dt.datetime.strptime(x[20:35], '%Y%m%dT%H%M%S'))
-    else:
-        log_df['sensing_date'] = log_df['product_name'].apply(
-            lambda x: dt.datetime.strptime(x.split('_')[-5], '%Y%m%dT%H%M%S'))
+        log_df = log_df.loc[log_df["sat_name_ok"], :]
+        nb_successes = log_df.shape[0]
+
+        #return np.nan, np.nan, np.nan, np.nan, deleted
+
+    log_df['sensing_date'] = log_df['product_name'].apply(lambda x: get_sensing_time(x, sat))
 
     # Timeliness = ingestion_date - sensing_date
     log_df['timeliness'] = log_df['ingestion_date'] - log_df['sensing_date']
@@ -125,6 +134,6 @@ def read_logs_dhus(sat, area, day, logdir):
     logger.info(f'Max timeliness: {log_df["timeliness"].max()}')
     logger.info(f'Median timeliness: {log_df["timeliness"].median()}')
 
-    return len(successes), log_df["timeliness"].min(), log_df["timeliness"].max(), log_df["timeliness"].median(), deleted
+    return nb_successes, log_df["timeliness"].min(), log_df["timeliness"].max(), log_df["timeliness"].median(), deleted
 
 
