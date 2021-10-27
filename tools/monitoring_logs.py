@@ -92,9 +92,22 @@ def read_logs_dhus(sat, day, logdir):
     # Get product name, and sensing date from it
     log_df['product_name'] = log_df['all'].apply(
         lambda x: sat[0:2] + x.rpartition(sat[0:2])[2].split('.zip')[0])
+
+    sat_name_from_product = log_df['product_name'].apply(lambda x: x[0:2])
+    if not (sat_name_from_product == sat[0:2]).all():
+        logger.error('Problem with products, some product_names do not match the satellite name.')
+        return np.nan, np.nan, np.nan, np.nan, deleted
+
     if sat == 'S2DEM':
-        log_df['sensing_date'] = log_df['product_name'].apply(
-            lambda x: dt.datetime.strptime(x.split('_')[-6], '%Y%m%dT%H%M%S'))
+        try:
+            log_df['sensing_date'] = log_df['product_name'].apply(
+                lambda x: dt.datetime.strptime(x.split('_')[-6], '%Y%m%dT%H%M%S'))
+        # some S2DEM are missing the DTERRENG data suffix ...
+        # TODO: create function that includes the exception,
+        # so that we only loose the timeliness information for one or several products instead of the whole df
+        except ValueError:
+            logger.error("Problem trying to read sensing time information, so returning NaNs.")
+            return len(successes), np.nan, np.nan, np.nan, deleted
     elif sat == 'S3':
         log_df['sensing_date'] = log_df['product_name'].apply(
             lambda x: dt.datetime.strptime(x[16:31], '%Y%m%dT%H%M%S'))
