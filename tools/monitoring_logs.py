@@ -35,7 +35,7 @@ def products_evicted(myfile):
     return out
 
 
-def read_logs_dhus(sat, day, logdir):
+def read_logs_dhus(sat, area, day, logdir):
     """
     Check dhus logs for one instance / one day
     :param sat: instance name (1 instance = 1 type of sentinel product)
@@ -49,14 +49,12 @@ def read_logs_dhus(sat, day, logdir):
 #  check FE logs for users downloading: nb of differnt users that downloaded one day
 #                                       nb of products downloaded by each user on one day
 
-
-
     logger.info(f'\n\nChecking BE of product {sat} for date {day.strftime("%d/%m/%Y")}\n')
     if day == pd.to_datetime('today').date():
-        log_day = list((logdir / sat / 'logs').rglob(f'{sat}-backend-*.log'))
+        log_day = list((logdir / sat / 'logs').rglob(f'{sat}-backend-{area}.log'))
     else:
         log_day = list((pathlib.Path(logdir) / sat / 'logs').rglob(
-            f'{sat}-backend-*--{day.strftime("%Y-%m-%d")}-*.log'))
+            f'{sat}-backend-{area}--{day.strftime("%Y-%m-%d")}-*.log'))
     logger.info(log_day)
     if len(log_day) != 1:
         logger.error('Something strange happened, more than one log file found for one day or no log file found.')
