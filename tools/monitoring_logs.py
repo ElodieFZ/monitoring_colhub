@@ -132,7 +132,7 @@ def read_logs_dhus(type, sat, area, day, logdir, outfile=None):
     log_day = log_day[0]
 
     logger.debug(f'Checking logfile {log_day}')
-    synch_list, down_list, ingested_list, deleted = check_logfile(log_day)
+    synch_list, ingested_list, down_list, deleted = check_logfile(log_day)
 
     if 'BE' in type:
         logger.info(f'{deleted} products successfully evicted.')
@@ -142,9 +142,7 @@ def read_logs_dhus(type, sat, area, day, logdir, outfile=None):
         logger.info(f'{synchronized} products successfully synchronized (from odata synchronizer).')
 
         # Check products ingested (with file scanner)
-        ##if sat == 'S1':
-        ##    ingested = check_ingested(ingested_list, sat)
-        ##    logger.info(f'{ingested} products successfully ingested (from file scanner).')
+        logger.info(f'{len(ingested_list)} products successfully ingested (from file scanner) - timeliness not checked.')
 
     if 'FE' in type:
         # Check products downloaded
@@ -152,6 +150,6 @@ def read_logs_dhus(type, sat, area, day, logdir, outfile=None):
         logger.info(f'{downloaded} products successfully downloaded.')
 
     if 'BE' in type:
-        return synchronized, timeliness_min, timeliness_max, timeliness_median, deleted
+        return synchronized, timeliness_min, timeliness_max, timeliness_median, deleted, len(ingested_list)
     else:
         return None

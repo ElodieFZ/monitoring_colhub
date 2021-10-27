@@ -66,11 +66,11 @@ if __name__ == '__main__':
     out = []
     for product in products:
         for date in pd.date_range(date1, date2):
-            nb, min, max, median, deleted = monitoring_logs.read_logs_dhus\
+            nb, min, max, median, deleted, ingested = monitoring_logs.read_logs_dhus\
                 ('BE', product, args.area, date, pathlib.Path(args.colhub_log_dir))
             out.append({'product': product, 'log_date': date, 'nb_ingested': nb,
                         'timeliness_min': min, 'timeliness_max': max, 'timeliness_median': median,
-                        'products_deleted': deleted})
+                        'products_deleted': deleted, 'nb_filescanner': ingested})
 
     if args.out_file:
         pd.DataFrame(out).to_csv(args.out_file, index=False, mode='a', header=None)
