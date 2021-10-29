@@ -1,0 +1,99 @@
+#!/usr/bin/python3
+
+"""
+
+Monitor dhus instance ingestion
+
+elodief - Oct 2021
+
+"""
+
+import argparse
+import pathlib
+import logging
+import pandas as pd
+import numpy as np
+from tools import monitoring_logs, utils
+
+
+def parse_arguments():
+    parser = argparse.ArgumentParser(
+        description='Products ingested in a DHuS instance for one day.',
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('-dl', dest='dhus_logdir', required=False, help="dhus instance logs directory.", type=pathlib.Path,
+                        default=pathlib.Path('/lustre/storeB/project/ESAcolhub/production-backend-global/S1/logs'))
+    parser.add_argument('-d1', dest='yyyymmdd1', required=False,
+                        help='First date in range (YYYYMMDD). Default is current day.')
+    parser.add_argument('-d2', dest='yyyymmdd2', required=False,
+                        help='Second date in range (YYYYMMDD). Default is first day.')
+    parser.add_argument('-o', dest='output_dir', required=True, help="Output directory", type=pathlib.Path,
+                        default=pathlib.Path('/home/nbs/colhub/monitoring'))
+    parser.add_argument('-sl', dest='script_logdir', required=False, help="script logs directory.", type=pathlib.Path,
+                        default=pathlib.Path('/home/nbs/colhub/logs'))
+    return parser.parse_args()
+
+
+if __name__ == '__main__':
+
+    args = parse_arguments()
+
+    logger = logging.getLogger()
+    logger.setLevel(logging.DEBUG)
+    logger.addHandler(
+        utils.setup_log(args.script_logdir / f"check_instance--{pd.to_datetime('today').strftime('%Y%m%d-%H%M%S')}.log"))
+
+    # Default start date is current day
+    if args.yyyymmdd1 is not None:
+        day1 = pd.to_datetime(args.yyyymmdd1, format='%Y%m%d')
+    else:
+        day1 = pd.to_datetime('today').iday()
+
+    # Default end date is start date
+    if args.yyyymmdd2 is not None:
+        day2 = pd.to_datetime(args.yyyymmdd2, format='%Y%m%d')
+    else:
+        day2 = day1
+
+    # Get log suffix
+    suffix = list(args.dhus_logdir.rglob('*.log'))[0].stem.split('--')[0]
+
+    inputs = []
+    outputs = None
+    for iday in pd.date_range(day1, day2):
+
+        # Get logfile name for the day
+        if iday == pd.to_datetime('today').day:
+            logfile = list(args.dhus_logdir.rglob(f'{suffix}.log'))
+        else:
+            logfile = list(args.dhus_logdir.rglob(f'{suffix}--{iday.strftime("%Y-%m-%d")}-*.log'))
+
+        if len(logfile) == 0:
+            logger.error(f'No log file found in {args.dhus_logdir}')
+            logger.error('so no processing done for the day')
+        elif len(logfile) > 1:
+            logger.error(f'More than one log file found for day {iday} in {args.dhus_logdir}')
+            logger.error('so no processing done for the day')
+        else:
+            logger.info(logfile)
+            nb, min, max, median, deleted, ingested, downloaded = monitoring_logs.read_logs_dhus(logfile[0])
+            inputs.append({'log_date': iday, 'in_synchronizer': nb,
+                        'timeliness_min': min, 'timeliness_max': max, 'timeliness_median': median,
+                        'products_deleted': deleted, 'in_filescanner': ingested})
+            if downloaded is not None:
+                if outputs:
+                    outputs.append(downloaded)
+                else:
+                    outputs = downloaded
+
+    if 'frontend' in suffix:
+        suffix = str(args.dhus_logdir).split('/')[-1] + '_' + suffix
+    pd.DataFrame(inputs).to_csv((args.output_dir / (suffix + '_inputs')).with_suffix('.csv'), index=False, mode='a', header=None)
+    if outputs is not None:
+        pd.DataFrame(outputs).to_csv((args.output_dir / (suffix + '_outputs')).with_suffix('.csv'), index=False, mode='a', \
+            header=None, columns=['download_time', 'user', 'product', 'size', 'download_duration'])
+
+
+
+
+
+

@@ -17,13 +17,13 @@ import numpy as np
 logger = logging.getLogger(__name__)
 
 
-def get_sensing_time(product_name, sat):
+def get_sensing_time(product_name):
 
-    if sat == 'S2DEM':
+    if 'DTERRENG' in product_name:
         pattern = product_name.split('_')[-6]
-    elif sat == 'S3':
+    elif product_name[0:2] == 'S3':
         pattern = product_name[16:31]
-    elif sat == 'S5p':
+    elif product_name[0:3] == 'S5p':
         pattern = product_name[20:35]
     else:
         pattern = product_name.split('_')[-5]
@@ -31,9 +31,37 @@ def get_sensing_time(product_name, sat):
     try:
         return dt.datetime.strptime(pattern, '%Y%m%dT%H%M%S')
     except ValueError:
-        logger.error('Problem trying to get sensing information from product name.')
-        logger.error(f'Product name: {product_name}, sat: {sat}')
+        logger.error(f'Problem trying to get sensing information from product name ({product_name}).')
         return None
+
+
+def check_downloaded(mylist):
+
+    if len(mylist) == 0:
+        return None
+
+    log_df = pd.DataFrame(mylist, columns=['all'])
+
+    # Get download date
+    # TODO: create function that includes the exception,
+    # so that we only loose the timeliness information for one or several products instead of the whole df
+    log_df['download_time'] = log_df['all'].apply(
+            lambda x: dt.datetime.strptime(x.split('[')[2].split(']')[0], '%Y-%m-%d %H:%M:%S,%f'))
+
+    # Get user name
+    log_df['user'] = log_df['all'].apply(lambda x: x.split('\'')[3])
+
+    # Get product name
+    log_df['product'] = log_df['all'].apply(lambda x: x.split('(')[1].split(')')[0])
+
+    # Get product size
+    log_df['size'] = log_df['all'].apply(lambda x: x.split('-> ')[1].split()[0])
+
+    # Get download time
+    log_df['download_duration'] = log_df['all'].apply(lambda x: x.split('completed in ')[1].split('ms')[0])
+    logger.info(f'Number of products downloaded: {log_df.shape[0]}')
+
+    return log_df
 
 
 def check_logfile(myfile):
@@ -59,7 +87,7 @@ def check_logfile(myfile):
     return synchronized, ingested, downloaded, removed
 
 
-def check_synchronized(mylist, sat):
+def check_synchronized(mylist):
 
     if len(mylist) == 0:
         return len(mylist), np.nan, np.nan, np.nan
@@ -80,22 +108,22 @@ def check_synchronized(mylist, sat):
     log_df['product_name'] = log_df['all'].apply(
         lambda x: x.split('[INFO ] Product \'')[1].split('.')[0])
 
-    # Check that product names match the sat name
-    # If not, drop the rows with non-matching product name
-    log_df["sat_name_ok"] = log_df['product_name'].apply(lambda x: x[0:2] == sat[0:2])
-    if not log_df["sat_name_ok"].all():
-        logger.error('Problem with products, some product_names do not match the satellite name.')
-        logger.error('Products that have been ingested: ')
-        logger.error(log_df[~log_df['sat_name_ok']]['product_name'])
-        log_df = log_df.loc[log_df["sat_name_ok"], :]
+    ### Check that product names match the sat name
+    ### If not, drop the rows with non-matching product name
+    ##log_df["sat_name_ok"] = log_df['product_name'].apply(lambda x: x[0:2] == sat[0:2])
+    ##if not log_df["sat_name_ok"].all():
+    ##    logger.error('Problem with products, some product_names do not match the satellite name.')
+    ##    logger.error('Products that have been ingested: ')
+    ##    logger.error(log_df[~log_df['sat_name_ok']]['product_name'])
+    ##    log_df = log_df.loc[log_df["sat_name_ok"], :]
 
     # Get sensing date
-    log_df['sensing_date'] = log_df['product_name'].apply(lambda x: get_sensing_time(x, sat))
+    log_df['sensing_date'] = log_df['product_name'].apply(lambda x: get_sensing_time(x))
 
     # Timeliness = ingestion_date - sensing_date
     log_df['timeliness'] = log_df['ingestion_date'] - log_df['sensing_date']
 
-    log_df.loc[log_df['timeliness'][::-1].idxmax()][['product_name', 'timeliness']]
+    #log_df.loc[log_df['timeliness'][::-1].idxmax()][['product_name', 'timeliness']]
 
     logger.info(f'Min timeliness: {log_df["timeliness"].min()}')
     logger.info(f'Max timeliness: {log_df["timeliness"].max()}')
@@ -104,52 +132,28 @@ def check_synchronized(mylist, sat):
     return log_df.shape[0], log_df["timeliness"].min(), log_df["timeliness"].max(), log_df["timeliness"].median()
 
 
-def read_logs_dhus(type, sat, area, day, logdir, outfile=None):
+def read_logs_dhus(log_day):
     """
-    Check dhus logs for one instance / one day
-    :param sat: instance name (1 instance = 1 type of sentinel product)
-    :param day:
-    :return:
+    Check a dhus logfile
     """
-
-# todo:
-#  check FE logs for number of new users for a date
-#  check FE logs for number of new users in a period
-#  check FE logs for users downloading: nb of differnt users that downloaded one day
-#                                       nb of products downloaded by each user on one day
-
-    logger.info(f'\n\nChecking BE of product {sat} for date {day.strftime("%d/%m/%Y")}\n')
-    if day == pd.to_datetime('today').date():
-        log_day = list((logdir / sat / 'logs').rglob(f'{sat}-backend-{area}.log'))
-    else:
-        log_day = list((pathlib.Path(logdir) / sat / 'logs').rglob(
-            f'{sat}-backend-{area}--{day.strftime("%Y-%m-%d")}-*.log'))
-    logger.info(log_day)
-    if len(log_day) != 1:
-        logger.error('Something strange happened, more than one log file found for one day or no log file found.')
-        logger.error(log_day)
-        return 0, np.nan, np.nan, np.nan, 0
-    log_day = log_day[0]
 
     logger.debug(f'Checking logfile {log_day}')
+
+    # Parse logfile
     synch_list, ingested_list, down_list, deleted = check_logfile(log_day)
 
-    if 'BE' in type:
-        logger.info(f'{deleted} products successfully evicted.')
+    # Check products synchronized (with odata synchronizer)
+    synchronized, timeliness_min, timeliness_max, timeliness_median = check_synchronized(synch_list)
+    logger.info(f'{synchronized} products successfully synchronized (from odata synchronizer).')
 
-        # Check products synchronized (with odata synchronizer)
-        synchronized, timeliness_min, timeliness_max, timeliness_median = check_synchronized(synch_list, sat)
-        logger.info(f'{synchronized} products successfully synchronized (from odata synchronizer).')
+    logger.info(f'{deleted} products successfully evicted.')
+    logger.info(f'{len(ingested_list)} products successfully ingested (from file scanner) - timeliness not checked for these products.')
 
-        # Check products ingested (with file scanner)
-        logger.info(f'{len(ingested_list)} products successfully ingested (from file scanner) - timeliness not checked.')
-
-    if 'FE' in type:
-        # Check products downloaded
-        downloaded = check_downloaded(down_list, outfile)
-        logger.info(f'{downloaded} products successfully downloaded.')
-
-    if 'BE' in type:
-        return synchronized, timeliness_min, timeliness_max, timeliness_median, deleted, len(ingested_list)
+    # Check products downloaded
+    downloaded = check_downloaded(down_list)
+    if downloaded is not None:
+        logger.info(f'{downloaded.shape[0]} products successfully downloaded by users.')
     else:
-        return None
+        logger.info('No products downloaded.')
+
+    return synchronized, timeliness_min, timeliness_max, timeliness_median, deleted, len(ingested_list), downloaded
