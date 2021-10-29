@@ -29,8 +29,10 @@ logdir=/lustre/storeB/project/NBS2/sentinel/production/NorwAREA/netCDFNBS_work/p
 monitdir=/lustre/storeB/project/NBS2/sentinel/production/NorwAREA/netCDFNBS_work/prod_tmp/monitoring
 
 # Check BEs logs
-python /home/nbs/colhub/script/monitoring_logs_BE -p all -d1 $yesterday -o ${monitdir}/colhub_logs_global_BE.csv -sl ${logdir}
-python /home/nbs/colhub/script/monitoring_logs_BE -p all -d1 $yesterday -cl /lustre/storeB/project/ESAcolhub/production-backend-AOI -o ${monitdir}/colhub_logs_AOI_BE.csv -sl ${logdir}
+areas='global AOI'
+for a in $areas; do
+    python /home/nbs/colhub/script/monitoring_logs_BE -p all -a $a -d1 $yesterday -cl /lustre/storeB/project/ESAcolhub/production-backend-${a} -o ${monitdir}/colhub_logs_${a}_BE.csv -sl ${logdir}
+done
 
 # Query BACKENDS for data with sensing date = yesterday and 3 days ago
 areas='global AOI'
