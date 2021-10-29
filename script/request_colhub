@@ -12,99 +12,93 @@ import datetime as dt
 import pandas as pd
 from tools import utils, sentinel_hub
 
+
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Get list of products from a Sentinel hub.')
-    parser.add_argument('-p', dest='product', default='all',
-                        help="Sentinel products to check (S1, S2L2A, S2L1C, S2DEM, S3, S5p) or all for all products")
-    parser.add_argument('-sd1', dest='syyyymmdd1', required=False,
-                        help='First sensing date (YYYY/MM/DD). Default is current day.')
-    parser.add_argument('-sd2', dest='syyyymmdd2', required=False,
-                        help='Second sensing date (YYYY/MM/DD). Default is first date.')
+    parser.add_argument('-p', dest='product', default='S1',
+                        help="Sentinel products to check (S1, S2L2A, S2L1C, S2DEM, S3, S5p)")
+    parser.add_argument('-a', dest='area', default='global',
+                        help="which area to query")
+    parser.add_argument('-d1', dest='syyyymmdd1', required=False,
+                        help='First sensing date (YYYYMMDD). Default is current day.')
+    parser.add_argument('-d2', dest='syyyymmdd2', required=False,
+                        help='Second sensing date (YYYYMMDD). Default is first date.')
     parser.add_argument('-id1', dest='iyyyymmdd1', required=False,
-                        help='First ingestion date (YYYY/MM/DD). Default is current day.')
+                        help='First ingestion date (YYYYMMDD). Default is current day.')
     parser.add_argument('-id2', dest='iyyyymmdd2', required=False,
-                        help='Second ingestion date (YYYY/MM/DD). Default is first date.')
+                        help='Second ingestion date (YYYYMMDD). Default is first date.')
     parser.add_argument("-wl", "--write_list", help="Write list of products found to file?", type=str, default=False)
-    parser.add_argument("-ol", "--outfile_list", help="Text file where to write list of products found", type=str, default=None)
+    parser.add_argument("-ld", "--list_outdir", help="Text file where to write list of products found", type=pathlib.Path, default=None)
     parser.add_argument("-wn", "--write_nb", help="Write nb of products found to file?", type=str, default=True)
-    parser.add_argument("-on", "--outfile_nb", help="Tex file where to write the nb of products found (a mode)", type=str, default=None)
+    parser.add_argument("-nd", "--nb_outdir", help="Tex file where to write the nb of products found (a mode)", type=pathlib.Path, default=None)
     parser.add_argument("-dh", '--datahub', help=('datahub'), type=str, default="colhub_nbs")
-    parser.add_argument("-l", '--logdir', help=('Log directory'), type=str, required=True)
+    parser.add_argument("-l", '--logdir', help=('Log directory'), type=pathlib.Path, required=True)
     return parser.parse_args()
     
 
 if __name__ == '__main__':
 
     args = parse_arguments()
-    cfgdir = pathlib.Path(__file__).resolve().parent.parent  / 'cfg'
+    cfgdir = pathlib.Path(__file__).resolve().parent.parent / 'cfg'
 
     # If a log dir is specified, log to file,
     # Otherwise, log to stdout
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
-    logger.addHandler(utils.setup_log(pathlib.Path(args.logdir)/f"request_datahub_{args.product}--{dt.datetime.now().strftime('%Y%m%d-%H%M%S')}.log"))
+    logger.addHandler(utils.setup_log(args.logdir/f"request_datahub_{args.product}--{dt.datetime.now().strftime('%Y%m%d-%H%M%S')}.log"))
 
-    #todo add cfg file for DEM DATA + remove S2DEM from S2
-    cfg = {}
-
-    # Read query config file
+    # Read datahub config file
     with open((cfgdir / 'datahub' / args.datahub).with_suffix('.yaml')) as f:
         cfg_datahub = yaml.load(f, Loader=yaml.FullLoader)
 
-    # Read product specific query file
-    with open((cfgdir / 'products' / args.product).with_suffix('.yaml')) as f:
-        products = yaml.load(f, Loader=yaml.FullLoader)
-
-    # Add full path to footprints
-    # todo: find a better way to do that!
-    cfg['footprints'] = []
-    for f in products['footprints']:
-        cfg['footprints'].append((cfgdir / 'footprints' / f).with_suffix('.geojson'))
-    del products['footprints']
-
     # Default sensing start date is today
     if args.syyyymmdd1:
-        sensing_start = pd.to_datetime(args.syyyymmdd1, format='%Y/%m/%d')
+        sensing_start = pd.to_datetime(args.syyyymmdd1, format='%Y%m%d')
     else:
         sensing_start = pd.to_datetime('today').date()
 
     # Default sensing end date is sensing start date
     if args.syyyymmdd2:
-        sensing_end = pd.to_datetime(args.syyyymmdd2, format='%Y/%m/%d')
+        sensing_end = pd.to_datetime(args.syyyymmdd2, format='%Y%m%d')
     else:
         sensing_end = sensing_start
 
+    # Read product specifications
+    with open((cfgdir / 'products' / args.product).with_suffix('.yaml')) as f:
+        query = yaml.load(f, Loader=yaml.FullLoader)
+
+    # Add full path to footprints
+    # todo: find a better way to do that!
+    footprint = (cfgdir / 'footprints' / args.area).with_suffix('.geojson')
+
+    # todo what to do with ingestion dates?
     # If no ingestion date provided, query between sensing start and now
-    if args.iyyyymmdd1:
-        cfg['ingestion_start'], cfg['ingestion_end'] = args.iyyyymmdd1, args.iyyyymmdd2
-    else:
-        cfg['ingestion_start'] = sensing_start
-        cfg['ingestion_end'] = pd.to_datetime('today')
+    #if args.iyyyymmdd1:
+    #    query['ingestion_start'], query['ingestion_end'] = args.iyyyymmdd1, args.iyyyymmdd2
+    #else:
+    #    query['ingestion_start'] = sensing_start
+    #    query['ingestion_end'] = pd.to_datetime('today')
 
     # Connect to datahub
     myhub = sentinel_hub.connect_hub(cfg_datahub)
 
     out = []
-    for p in products:
-        for date in pd.date_range(sensing_start, sensing_end):
+    for date in pd.date_range(sensing_start, sensing_end):
 
-            logger.info(f'Checking product {p} for date {date}')
+        logger.info(f'Checking product {args.product} for date {date} for zone {args.area}')
 
-            # Request to datahub
-            cfg['sensing_start'] = date
-            cfg['sensing_end'] = date + pd.Timedelta(days=1)
-            products_found = sentinel_hub.query_hub(cfg, myhub, products[p])
+        # Request to datahub
+        products_found = sentinel_hub.query_hub(myhub, date, date + pd.Timedelta(days=1), footprint, query)
 
-            # Write list of products_found to text file
-            if len(products_found) > 0:
-                logger.debug(products_found.to_list())
-                if args.write_list:
-                    logger.info(f"Writing list to {args.outfile_list}")
-                    products_found.to_csv(args.outfile_list.replace('.txt', f'_{p}.txt'), header=False, index=False, mode='w')
-            if args.write_nb:
-                out.append({'product': p, 'sensing_date': date, 'nb_products': len(products_found)})
-            else:
-                logger.info(f"No products found")
+        # Write list of products_found to text file
+        if len(products_found) > 0:
+            if args.write_list:
+                logger.info(f"Writing list to {args.outfile_list}")
+                products_found.to_csv(args.list_outdir / ('_'.join(['products_list_in', cfg_datahub['name'], 'for', args.product, args.area]) + '.csv') , header=False, index=False, mode='w')
+        if args.write_nb:
+            out.append({'product': args.product, 'area': args.area, 'sensing_date': date, 'nb_products': len(products_found)})
+        else:
+            logger.info(f"No products found")
 
     if args.write_nb:
-        pd.DataFrame(out).to_csv(args.outfile_nb, index=False, mode='a', header=None)
+        pd.DataFrame(out).to_csv(args.nb_outdir / ('_'.join(['products_nb_in', cfg_datahub['name'], 'for', args.product, args.area]) + '.csv'), index=False, mode='a', header=None)

@@ -1,7 +1,0 @@
-# OpenSearch query parameters
-'S1':
-    platformname: 'Sentinel-1'
-
-# Footprints
-footprints:
-    - 'colhub_aoi'

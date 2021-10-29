@@ -55,42 +55,26 @@ def call_api(myapi, **myquery):
     return myapi.query(**myquery)
 
 
-def query_hub(mycfg, myapi, myquery):
+def query_hub(myapi, sensing_start, sensing_end, footprint, myquery):
     """
     Request a Sentinel DataHub
     return: list of products id
     """
     logger.info(f"Searching products for platform {myquery['platformname']}, "
-                f" sensing dates {pretty_date(mycfg['sensing_start'])} to {pretty_date(mycfg['sensing_end'])} "
-                f"and ingestion dates {pretty_date(mycfg['ingestion_start'])} to {pretty_date(mycfg['ingestion_end'])}")
-    all_products = pd.Series([], dtype=pd.StringDtype())
+                f" sensing dates {sensing_start} to {sensing_end}")
 
-    # Query hub for each footprint
-    for footprint in mycfg['footprints']:
+    if footprint.stem.startswith('global'):
+        products = myapi.query(date=(sensing_start, sensing_end), **myquery)
+    else:
+        zone = geojson_to_wkt(read_geojson(footprint))
+        products = myapi.query(zone, area_relation='Intersects', date=(sensing_start, sensing_end), **myquery)
 
-        if footprint.name.startswith('all'):
-            products = myapi.query(date=(mycfg['sensing_start'], mycfg['sensing_end']),
-                                   **myquery)
-                                   ##ingestiondate=(mycfg['ingestion_start'], mycfg['ingestion_end']),
-        else:
-            zone = geojson_to_wkt(read_geojson(footprint))
-            products = myapi.query(zone, area_relation='Intersects',
-                                   date=(mycfg['sensing_start'], mycfg['sensing_end']),
-                                   **myquery)
-                                   #ingestiondate=(mycfg['ingestion_start'], mycfg['ingestion_end']),
+    products_df = myapi.to_dataframe(products)
 
-        products_df = myapi.to_dataframe(products)
+    if products_df.size > 0:
+        logger.info(f'{products_df.shape[0]} products found')
+    else:
+        logger.info(f'No products found')
 
-        if products_df.size > 0:
-            logger.info(f'{products_df.shape[0]} products found for footprint {footprint}')
-            all_products = all_products.append(products_df['identifier'])
-        else:
-            logger.info(f'No products found for footprint {footprint}')
-
-    # Remove duplicate products
-    logger.debug(f'{all_products.shape[0]} products found in total')
-    all_products.drop_duplicates(inplace=True)
-    logger.info(f'{all_products.shape[0]} unique products found in total')
-
-    return all_products
+    return products_df
 

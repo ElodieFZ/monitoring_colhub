@@ -1,8 +1,0 @@
-# OpenSearch query parameters
-'S2DEM':
-    platformname: 'Sentinel-2'
-    producttype: 'S2MSI1C'
-
-# Footprints
-footprints:
-    - 'all'

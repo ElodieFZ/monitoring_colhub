@@ -1,7 +1,0 @@
-# OpenSearch query parameters
-'S5p':
-    platformname: 'Sentinel-5 Precursor'
-
-# Footprints
-footprints:
-    - 'all'

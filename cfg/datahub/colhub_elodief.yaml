@@ -1,4 +1,4 @@
 name: 'colhub'
 url: 'https://colhub.met.no'
 user: 'elodief'
-credentials: '/home/nbs/colhub/myValues_elodief.txt'
+credentials: '/home/elodief/Work/NBS/monitoring_colhub/myValues_elodief.txt'

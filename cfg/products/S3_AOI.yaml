@@ -1,7 +1,0 @@
-# OpenSearch query parameters
-'S3':
-    platformname: 'Sentinel-3'
-
-# Footprints
-footprints:
-    - 'colhub_aoi'
