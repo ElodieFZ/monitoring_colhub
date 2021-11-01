@@ -80,7 +80,7 @@ if __name__ == '__main__':
                         'timeliness_min': min, 'timeliness_max': max, 'timeliness_median': median,
                         'products_deleted': deleted, 'in_filescanner': ingested})
             if downloaded is not None:
-                if outputs:
+                if outputs is not None:
                     outputs.append(downloaded)
                 else:
                     outputs = downloaded
