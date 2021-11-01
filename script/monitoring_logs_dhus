@@ -68,7 +68,7 @@ if __name__ == '__main__':
             logfile = list(args.dhus_logdir.rglob(f'{suffix}--{iday.strftime("%Y-%m-%d")}-*.log'))
 
         if len(logfile) == 0:
-            logger.error(f'No log file found in {args.dhus_logdir}')
+            logger.error(f'No log file found in {args.dhus_logdir} for day {iday}')
             logger.error('so no processing done for the day')
         elif len(logfile) > 1:
             logger.error(f'More than one log file found for day {iday} in {args.dhus_logdir}')
@@ -81,7 +81,7 @@ if __name__ == '__main__':
                         'products_deleted': deleted, 'in_filescanner': ingested})
             if downloaded is not None:
                 if outputs is not None:
-                    outputs.append(downloaded)
+                    outputs = outputs.append(downloaded)
                 else:
                     outputs = downloaded
 
