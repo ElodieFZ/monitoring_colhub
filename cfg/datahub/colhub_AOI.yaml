@@ -1,4 +1,4 @@
 name: 'colhub_AOI'
 url: 'http://sentinelhub2.met.no:8096'
 user: 'monitoring'
-credentials: '/home/elodief/monitoring_colhub/myValues_elodief.txt'
+credentials: '/home/elodief/colhub/myValues.txt'

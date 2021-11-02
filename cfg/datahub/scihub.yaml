@@ -1,4 +1,4 @@
 name: 'scihub'
 url: 'https://scihub.copernicus.eu/dhus/#/home'
 user: 'elodief'
-credentials: '/home/elodief/monitoring_colhub/myValues_elodief.txt'
+credentials: '/home/elodief/colhub/myValues.txt'
