@@ -1,0 +1,3 @@
+name: 'colhub_global'
+url: 'https://colhub.met.no'
+credentials: '/home/elodief/monitoring_colhub/myValues.txt'

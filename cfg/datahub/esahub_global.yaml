@@ -1,0 +1,3 @@
+name: 'esahub_global'
+url: 'http://sentinelhub2.met.no'
+credentials: '/home/elodief/monitoring_colhub/myValues_elodief.txt'
