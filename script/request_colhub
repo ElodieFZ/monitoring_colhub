@@ -30,7 +30,7 @@ def parse_arguments():
     parser.add_argument("-wl", "--write_list", help="Write list of products found to file?", type=str, default=False)
     parser.add_argument("-ld", "--list_outdir", help="Text file where to write list of products found", type=pathlib.Path, default=None)
     parser.add_argument("-wn", "--write_nb", help="Write nb of products found to file?", type=str, default=True)
-    parser.add_argument("-nd", "--nb_outdir", help="Tex file where to write the nb of products found (a mode)", type=pathlib.Path, default=None)
+    parser.add_argument("-of", "--nb_outfile", help="Tex file where to write the nb of products found (a mode)", type=pathlib.Path, default=None)
     parser.add_argument("-dh", '--datahub', help=('datahub'), type=str, default="colhub_nbs")
     parser.add_argument("-l", '--logdir', help=('Log directory'), type=pathlib.Path, required=True)
     return parser.parse_args()
@@ -94,11 +94,12 @@ if __name__ == '__main__':
         if len(products_found) > 0:
             if args.write_list:
                 logger.info(f"Writing list to {args.outfile_list}")
-                products_found.to_csv(args.list_outdir / ('_'.join(['products_list_in', cfg_datahub['name'], 'for', args.product, args.area]) + '.csv') , header=False, index=False, mode='w')
+                products_found.to_csv(args.list_outdir / ('_'.join(['products_list_in', cfg_datahub['name']]) + '.csv') , header=False, index=False, mode='w')
         if args.write_nb:
             out.append({'product': args.product, 'area': args.area, 'sensing_date': date, 'nb_products': len(products_found)})
         else:
             logger.info(f"No products found")
 
     if args.write_nb:
-        pd.DataFrame(out).to_csv(args.nb_outdir / ('_'.join(['products_nb_in', cfg_datahub['name'], 'for', args.product, args.area]) + '.csv'), index=False, mode='a', header=None)
+        pd.DataFrame(out).to_csv(args.nb_outfile, index=False, mode='a', header=None)
+
