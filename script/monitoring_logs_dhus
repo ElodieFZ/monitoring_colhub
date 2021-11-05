@@ -58,6 +58,7 @@ if __name__ == '__main__':
     suffix = list(args.dhus_logdir.rglob('*.log'))[0].stem.split('--')[0]
 
     inputs = []
+    users = []
     outputs = None
     for iday in pd.date_range(day1, day2):
 
@@ -75,10 +76,12 @@ if __name__ == '__main__':
             logger.error('so no processing done for the day')
         else:
             logger.info(logfile)
-            nb, min, max, median, deleted, ingested, downloaded = monitoring_logs.read_logs_dhus(logfile[0])
+            nb, min, max, median, deleted, ingested, downloaded, new_users, deleted_users\
+                = monitoring_logs.read_logs_dhus(logfile[0])
             inputs.append({'log_date': iday, 'in_synchronizer': nb,
                         'timeliness_min': min, 'timeliness_max': max, 'timeliness_median': median,
                         'products_deleted': deleted, 'in_filescanner': ingested})
+            users.append({'new_users': new_users, 'deleted_users': deleted_users})
             if downloaded is not None:
                 if outputs is not None:
                     outputs = outputs.append(downloaded)
@@ -88,6 +91,7 @@ if __name__ == '__main__':
     if 'frontend' in suffix:
         suffix = str(args.dhus_logdir).split('/')[-1] + '_' + suffix
     pd.DataFrame(inputs).to_csv((args.output_dir / (suffix + '_inputs')).with_suffix('.csv'), index=False, mode='a', header=None)
+    pd.DataFrame(users).to_csv((args.output_dir / (suffix + '_users')).with_suffix('.csv'), index=False, mode='a', header=None)
     if outputs is not None:
         pd.DataFrame(outputs).to_csv((args.output_dir / (suffix + '_outputs')).with_suffix('.csv'), index=False, mode='a', \
             header=None, columns=['download_time', 'user', 'product', 'size', 'download_duration'])

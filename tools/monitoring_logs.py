@@ -69,11 +69,14 @@ def check_logfile(myfile):
     downloaded = []
     ingested = []
     removed = 0
+    users_new = 0
+    users_deleted = 0
     sat = myfile.stem.split('-')[0]
     if sat == 'S5p':
         pattern = '.nc'
     else:
         pattern = '.zip'
+    okish = False
     with open(myfile) as f:
         for line in f:
             if all(x in line for x in ["successfully downloaded", pattern]):
@@ -84,7 +87,16 @@ def check_logfile(myfile):
                 ingested.append(line)
             elif 'deleted globally' in line:
                 removed += 1
-    return synchronized, ingested, downloaded, removed
+            # For user creation, need to check if it's successfull with the next line in the log file
+            elif all(x in line for x in ["Create/save User(", "http-nio-"]):
+                okish = True
+            elif okish and all(x in line for x in ['SUCCESS']):
+                users_new += 1
+                okish = False
+            elif 'Delete User' in line:
+                users_deleted += 1
+
+    return synchronized, ingested, downloaded, removed, users_new, users_deleted
 
 
 def check_synchronized(mylist):
@@ -140,7 +152,7 @@ def read_logs_dhus(log_day):
     logger.debug(f'Checking logfile {log_day}')
 
     # Parse logfile
-    synch_list, ingested_list, down_list, deleted = check_logfile(log_day)
+    synch_list, ingested_list, down_list, deleted, new_users, deleted_users = check_logfile(log_day)
 
     # Check products synchronized (with odata synchronizer)
     synchronized, timeliness_min, timeliness_max, timeliness_median = check_synchronized(synch_list)
@@ -149,6 +161,9 @@ def read_logs_dhus(log_day):
     logger.info(f'{deleted} products successfully evicted.')
     logger.info(f'{len(ingested_list)} products successfully ingested (from file scanner) - timeliness not checked for these products.')
 
+    logger.info(f'{deleted_users} users deleted.')
+    logger.info(f'{new_users} new users.')
+
     # Check products downloaded
     downloaded = check_downloaded(down_list)
     if downloaded is not None:
@@ -156,4 +171,4 @@ def read_logs_dhus(log_day):
     else:
         logger.info('No products downloaded.')
 
-    return synchronized, timeliness_min, timeliness_max, timeliness_median, deleted, len(ingested_list), downloaded
+    return synchronized, timeliness_min, timeliness_max, timeliness_median, deleted, len(ingested_list), downloaded, deleted_users, new_users
