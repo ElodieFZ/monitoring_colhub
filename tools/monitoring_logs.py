@@ -171,4 +171,4 @@ def read_logs_dhus(log_day):
     else:
         logger.info('No products downloaded.')
 
-    return synchronized, timeliness_min, timeliness_max, timeliness_median, deleted, len(ingested_list), downloaded, deleted_users, new_users
+    return synchronized, timeliness_min, timeliness_max, timeliness_median, deleted, len(ingested_list), downloaded, new_users, deleted_users
