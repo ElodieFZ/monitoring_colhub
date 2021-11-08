@@ -1,3 +1,3 @@
 name: 'colhub_BE_S3_AOI'
 url: 'http://ppi-distribution:8085/#/home'
-credentials: '/home/elodief/colhub/myValues.txt'
+credentials: '/home/nbs/colhub/myValues.txt'

@@ -81,7 +81,7 @@ if __name__ == '__main__':
             inputs.append({'log_date': iday, 'in_synchronizer': nb,
                         'timeliness_min': min, 'timeliness_max': max, 'timeliness_median': median,
                         'products_deleted': deleted, 'in_filescanner': ingested})
-            users.append({'new_users': new_users, 'deleted_users': deleted_users})
+            users.append({'log_date': iday, 'new_users': new_users, 'deleted_users': deleted_users})
             if downloaded is not None:
                 if outputs is not None:
                     outputs = outputs.append(downloaded)

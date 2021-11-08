@@ -1,0 +1,4 @@
+name: 'ESA global'
+url: 'https://sentinelhub2.met.no/#/home'
+user: 'elodief'
+credentials: '/home/nbs/colhub/myValues.txt'
