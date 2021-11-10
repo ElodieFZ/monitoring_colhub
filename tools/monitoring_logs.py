@@ -35,6 +35,15 @@ def get_sensing_time(product_name):
         return None
 
 
+def get_ingestion_time(string):
+
+    try:
+        return dt.datetime.strptime(string.split('[')[2].split(']')[0], '%Y-%m-%d %H:%M:%S,%f')
+    except IndexError:
+        logger.error(f'Problem trying to get ingestion information from product name ({product_name}).')
+        return None
+
+
 def check_downloaded(mylist):
 
     if len(mylist) == 0:
@@ -68,7 +77,7 @@ def check_logfile(myfile):
     synchronized = []
     downloaded = []
     ingested = []
-    removed = 0
+    deleted = []
     users_new = 0
     users_deleted = 0
     sat = myfile.stem.split('-')[0]
@@ -86,7 +95,7 @@ def check_logfile(myfile):
             elif 'Ingestion processing complete for product file' in line:
                 ingested.append(line)
             elif 'deleted globally' in line:
-                removed += 1
+                deleted.append(line)
             # For user creation, need to check if it's successfull with the next line in the log file
             elif all(x in line for x in ["Create/save User(", "http-nio-"]):
                 okish = True
@@ -96,52 +105,58 @@ def check_logfile(myfile):
             elif 'Delete User' in line:
                 users_deleted += 1
 
-    return synchronized, ingested, downloaded, removed, users_new, users_deleted
+    return synchronized, ingested, downloaded, deleted, users_new, users_deleted
 
 
-def check_synchronized(mylist):
+def check_synchronized(list_synch, list_ing, list_del):
 
-    if len(mylist) == 0:
-        return len(mylist), np.nan, np.nan, np.nan
+    synch_df = pd.DataFrame(list_synch, columns=['all'])
+    ing_df = pd.DataFrame(list_ing, columns=['all'])
+    del_df = pd.DataFrame(list_del, columns=['all'])
 
-    log_df = pd.DataFrame(mylist, columns=['all'])
+    # -- Get info on synchronized products (ie with odata synchronizer)
 
-    # Get ingestion date
-    # TODO: create function that includes the exception,
-    # so that we only loose the timeliness information for one or several products instead of the whole df
-    try:
-        log_df['ingestion_date'] = log_df['all'].apply(
-            lambda x: dt.datetime.strptime(x.split('[')[2].split(']')[0], '%Y-%m-%d %H:%M:%S,%f'))
-    except IndexError:
-        logger.error("Problem trying to read timeliness information, so returning NaNs.")
-        return len(mydf), np.nan, np.nan, np.nan
-
+    # Ingestion date
+    synch_df['date'] = synch_df['all'].apply(lambda x: get_ingestion_time(x))
     # Get product name
-    log_df['product_name'] = log_df['all'].apply(
-        lambda x: x.split('[INFO ] Product \'')[1].split('.')[0])
-
-    ### Check that product names match the sat name
-    ### If not, drop the rows with non-matching product name
-    ##log_df["sat_name_ok"] = log_df['product_name'].apply(lambda x: x[0:2] == sat[0:2])
-    ##if not log_df["sat_name_ok"].all():
-    ##    logger.error('Problem with products, some product_names do not match the satellite name.')
-    ##    logger.error('Products that have been ingested: ')
-    ##    logger.error(log_df[~log_df['sat_name_ok']]['product_name'])
-    ##    log_df = log_df.loc[log_df["sat_name_ok"], :]
-
-    # Get sensing date
-    log_df['sensing_date'] = log_df['product_name'].apply(lambda x: get_sensing_time(x))
-
+    synch_df['product_name'] = synch_df['all'].apply(lambda x: x.split('[INFO ] Product \'')[1].split('.')[0])
+    # Sensing date
+    #synch_df['sensing_date'] = synch_df['product_name'].apply(lambda x: get_sensing_time(x))
     # Timeliness = ingestion_date - sensing_date
-    log_df['timeliness'] = log_df['ingestion_date'] - log_df['sensing_date']
+    synch_df['timeliness'] = synch_df['date'] - synch_df['product_name'].apply(lambda x: get_sensing_time(x))
+    # Product size
+    synch_df['size'] = synch_df['all'].apply(lambda x: x.split('(')[1].split(' bytes')[0])
+    # Cleaning
+    synch_df['type'] = 'synchronized'
+    synch_df.drop(columns=['all'], inplace=True)
 
-    #log_df.loc[log_df['timeliness'][::-1].idxmax()][['product_name', 'timeliness']]
+    # -- Get info on deleted products
+    # Ingestion date
+    del_df['date'] = del_df['all'].apply(lambda x: get_ingestion_time(x))
+    # Get product name
+    del_df['product_name'] = None
+    # Timeliness = ingestion_date - sensing_date
+    del_df['timeliness'] = None
+    # Product size
+    del_df['size'] = None
+    # Cleaning
+    del_df['type'] = 'deleted'
+    del_df.drop(columns=['all'], inplace=True)
 
-    logger.info(f'Min timeliness: {log_df["timeliness"].min()}')
-    logger.info(f'Max timeliness: {log_df["timeliness"].max()}')
-    logger.info(f'Median timeliness: {log_df["timeliness"].median()}')
+    # -- Get info on ingested products (ie with file scanner)
+    # Ingestion date
+    ing_df['date'] = ing_df['all'].apply(lambda x: get_ingestion_time(x))
+    # Get product name
+    ing_df['product_name'] = ing_df['all'].apply(lambda x: x.split('file:')[1].split('.SAFE')[0].split('/')[-1])
+    # Timeliness = ingestion_date - sensing_date
+    ing_df['timeliness'] = None
+    # Product size
+    ing_df['size'] = ing_df['all'].apply(lambda x: x.split('(')[1].split(' bytes')[0])
+    # Cleaning
+    ing_df['type'] = 'fscanner'
+    ing_df.drop(columns=['all'], inplace=True)
 
-    return log_df.shape[0], log_df["timeliness"].min(), log_df["timeliness"].max(), log_df["timeliness"].median()
+    return synch_df.append(ing_df).append(del_df)
 
 
 def read_logs_dhus(log_day):
@@ -152,23 +167,12 @@ def read_logs_dhus(log_day):
     logger.debug(f'Checking logfile {log_day}')
 
     # Parse logfile
-    synch_list, ingested_list, down_list, deleted, new_users, deleted_users = check_logfile(log_day)
+    synch_list, ingested_list, down_list, deleted_list, new_users, deleted_users = check_logfile(log_day)
 
-    # Check products synchronized (with odata synchronizer)
-    synchronized, timeliness_min, timeliness_max, timeliness_median = check_synchronized(synch_list)
-    logger.info(f'{synchronized} products successfully synchronized (from odata synchronizer).')
-
-    logger.info(f'{deleted} products successfully evicted.')
-    logger.info(f'{len(ingested_list)} products successfully ingested (from file scanner) - timeliness not checked for these products.')
-
-    logger.info(f'{deleted_users} users deleted.')
-    logger.info(f'{new_users} new users.')
+    # Check products input
+    input_df = check_synchronized(synch_list, ingested_list, deleted_list)
 
     # Check products downloaded
-    downloaded = check_downloaded(down_list)
-    if downloaded is not None:
-        logger.info(f'{downloaded.shape[0]} products successfully downloaded by users.')
-    else:
-        logger.info('No products downloaded.')
+    download_df = check_downloaded(down_list)
 
-    return synchronized, timeliness_min, timeliness_max, timeliness_median, deleted, len(ingested_list), downloaded, deleted_users, new_users
+    return input_df, download_df, deleted_users, new_users
