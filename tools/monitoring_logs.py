@@ -175,4 +175,4 @@ def read_logs_dhus(log_day):
     # Check products downloaded
     download_df = check_downloaded(down_list)
 
-    return input_df, download_df, deleted_users, new_users
+    return input_df, download_df, new_users, deleted_users
