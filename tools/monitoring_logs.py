@@ -213,10 +213,11 @@ def read_logs_dhus(log_day):
     # - median timeliness
     try:
         stats_median = group['timeliness'].median()
-        input_stats = pd.concat([stats_sum, stats_nb, stats_median], axis=1)
+        input_stats_tmp = pd.concat([stats_sum, stats_nb, stats_median], axis=1)
     except pd.core.base.DataError:
-        input_stats = pd.concat([stats_sum, stats_nb], axis=1)
-    input_stats.reset_index(inplace=True)
+        input_stats_tmp = pd.concat([stats_sum, stats_nb], axis=1)
+
+    input_stats = input_stats_tmp.rename(columns={'action': 'nb_products'}).reset_index()
 
     # Check products downloaded
     download_df = check_downloaded(down_list)
