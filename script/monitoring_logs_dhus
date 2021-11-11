@@ -78,26 +78,24 @@ if __name__ == '__main__':
             logger.info(logfile)
             inputs_tmp, downloaded, new_users, deleted_users = monitoring_logs.read_logs_dhus(logfile[0])
             users.append({'log_date': iday, 'new_users': new_users, 'deleted_users': deleted_users})
-            if downloaded is not None:
-                if outputs is not None:
-                    outputs = outputs.append(downloaded)
-                else:
-                    outputs = downloaded
-            if inputs_tmp is not None:
-                if inputs is not None:
-                    input.append(inputs_tmp)
-                else:
-                    inputs = inputs_tmp
+            try:
+                outputs = outputs.append(downloaded)
+            except AttributeError:
+                outputs = downloaded
+            try:
+                input.append(inputs_tmp)
+            except AttributeError:
+                inputs = inputs_tmp
 
     if 'frontend' in suffix:
         suffix = str(args.dhus_logdir).split('/')[-1] + '_' + suffix
     pd.DataFrame(users).to_csv((args.output_dir / (suffix + '_users')).with_suffix('.csv'), index=False, mode='a', header=None)
     if outputs is not None:
-        pd.DataFrame(outputs).to_csv((args.output_dir / (suffix + '_outputs')).with_suffix('.csv'), index=False, mode='a', \
+        pd.DataFrame(outputs).to_csv((args.output_dir / (suffix + '_outputs')).with_suffix('.csv'), index=False,
+                                     mode='a', \
             header=None, columns=['download_time', 'user', 'product', 'size', 'download_duration'])
     if inputs is not None:
-        pd.DataFrame(inputs).to_csv((args.output_dir / (suffix + '_inputs')).with_suffix('.csv'), index=False, mode='a', \
-                                     header=None)
+        pd.DataFrame(inputs).to_csv((args.output_dir / (suffix + '_inputs')).with_suffix('.csv'), mode='a', header=None)
 
 
 
