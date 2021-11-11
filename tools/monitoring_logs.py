@@ -61,6 +61,14 @@ def get_product_type(product):
                 type = 'SRAL_L' + tmp[2]
             elif tmp[1] == 'OL':
                 type = 'OLCI_L' + tmp[2]
+            elif tmp[1] == 'SY':
+                type = 'SYN_L' + tmp[2]
+        elif product[0:2] == 'S5':
+            tmp = product.split('_')
+            if tmp[1] == 'OFFL':
+                type = 'OFFL_' + tmp[2]
+            elif tmp[1] == 'NRTI':
+                type = 'NRTI_' + tmp[2]
         if 'DTERRENG' in product:
             type = type + '_DTERRENG'
     except TypeError:
@@ -185,10 +193,10 @@ def check_synchronized(list_synch, list_ing, list_del):
     ing_df['action'] = 'fscanner'
     ing_df.drop(columns=['all'], inplace=True)
 
-    return synch_df.append(ing_df).append(del_df), day
+    return synch_df.append(ing_df).append(del_df)
 
 
-def read_logs_dhus(log_day):
+def read_logs_dhus(log_day, day):
     """
     Check a dhus logfile
     """
@@ -199,7 +207,7 @@ def read_logs_dhus(log_day):
     synch_list, ingested_list, down_list, deleted_list, new_users, deleted_users = check_logfile(log_day)
 
     # Check products input
-    input_df, day = check_synchronized(synch_list, ingested_list, deleted_list)
+    input_df = check_synchronized(synch_list, ingested_list, deleted_list)
 
     # Extra information needed for output csv file
     input_df['day'] = day
