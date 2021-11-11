@@ -65,6 +65,8 @@ def get_product_type(product):
             type = type + '_DTERRENG'
     except TypeError:
         type = 'Unknown'
+    if type == 'Unknown':
+        logger.info(f'Type not found for product {product}')
     return type
 
 
@@ -88,7 +90,7 @@ def check_downloaded(mylist):
     log_df['product'] = log_df['all'].apply(lambda x: x.split('(')[1].split(')')[0])
 
     # Product type
-    log_df['product_type'] = log_df['all'].apply(lambda x: get_product_type(x))
+    log_df['product_type'] = log_df['product'].apply(lambda x: get_product_type(x))
 
     # Get product size
     log_df['size'] = log_df['all'].apply(lambda x: x.split('-> ')[1].split()[0])
@@ -158,8 +160,10 @@ def check_synchronized(list_synch, list_ing, list_del):
     synch_df['action'] = 'synchronized'
     synch_df.drop(columns=['all'], inplace=True)
 
-    sat = product_name[0][0:2]
-    day = ingestion_date[0].date().strftime('%Y%m%d')
+    try:
+        day = ingestion_date[0].date().strftime('%Y%m%d')
+    except IndexError:
+        day = 'Unknown'
 
     # -- Get info on deleted products
     del_df['timeliness'] = 0
@@ -181,7 +185,7 @@ def check_synchronized(list_synch, list_ing, list_del):
     ing_df['action'] = 'fscanner'
     ing_df.drop(columns=['all'], inplace=True)
 
-    return synch_df.append(ing_df).append(del_df), sat, day
+    return synch_df.append(ing_df).append(del_df), day
 
 
 def read_logs_dhus(log_day):
@@ -195,21 +199,24 @@ def read_logs_dhus(log_day):
     synch_list, ingested_list, down_list, deleted_list, new_users, deleted_users = check_logfile(log_day)
 
     # Check products input
-    input_df, sat, day = check_synchronized(synch_list, ingested_list, deleted_list)
+    input_df, day = check_synchronized(synch_list, ingested_list, deleted_list)
 
     # Extra information needed for output csv file
-    input_df['satellite'] = sat
     input_df['day'] = day
 
     # Compute the statistics of interest:
-    group = input_df.groupby(['day', 'satellite', 'product_type', 'action'])
+    group = input_df.groupby(['day', 'product_type', 'action'])
     # - nb of products
     stats_nb = group['action'].count()
     # - total volume of products
     stats_sum = group['size'].sum()
     # - median timeliness
-    stats_median = group['timeliness'].median()
-    input_stats = pd.concat([stats_sum, stats_nb, stats_median], axis=1)
+    try:
+        stats_median = group['timeliness'].median()
+        input_stats = pd.concat([stats_sum, stats_nb, stats_median], axis=1)
+    except pd.core.base.DataError:
+        input_stats = pd.concat([stats_sum, stats_nb], axis=1)
+    input_stats.reset_index(inplace=True)
 
     # Check products downloaded
     download_df = check_downloaded(down_list)

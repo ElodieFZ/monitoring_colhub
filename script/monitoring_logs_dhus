@@ -83,7 +83,7 @@ if __name__ == '__main__':
             except AttributeError:
                 outputs = downloaded
             try:
-                input.append(inputs_tmp)
+                inputs = inputs.append(inputs_tmp)
             except AttributeError:
                 inputs = inputs_tmp
 
@@ -95,7 +95,7 @@ if __name__ == '__main__':
                                      mode='a', \
             header=None, columns=['download_time', 'user', 'product', 'size', 'download_duration'])
     if inputs is not None:
-        pd.DataFrame(inputs).to_csv((args.output_dir / (suffix + '_inputs')).with_suffix('.csv'), mode='a', header=None)
+        pd.DataFrame(inputs).to_csv((args.output_dir / (suffix + '_inputs')).with_suffix('.csv'), mode='a', header=None, index=False)
 
 
 
