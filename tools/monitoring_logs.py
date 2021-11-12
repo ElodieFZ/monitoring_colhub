@@ -154,39 +154,42 @@ def check_synchronized(list_synch, list_ing, list_del):
     # -- Get info on synchronized products (ie with odata synchronizer)
 
     # Ingestion date
-    ingestion_date = synch_df['all'].apply(lambda x: get_ingestion_time(x))
-    # Get product name
-    product_name_sync = synch_df['all'].apply(lambda x: x.split('[INFO ] Product \'')[1].split('.')[0])
-    # Product type
-    synch_df['product_type'] = product_name_sync.apply(lambda x: get_product_type(x))
-    # Timeliness = ingestion_date - sensing_date (in hours)
-    synch_df['timeliness'] = (ingestion_date - product_name_sync.apply(lambda x: get_sensing_time(x)))\
-        .apply(lambda x: pd.to_timedelta(x).total_seconds() / 3600)
-    # Product size (in Gb)
-    synch_df['size'] = synch_df['all'].apply(lambda x: int(x.split('(')[1].split(' bytes')[0])/1024/1024/1024)
-    # Cleaning
-    synch_df['action'] = 'synchronized'
-    synch_df.drop(columns=['all'], inplace=True)
+    if synch_df.shape[0] != 0:
+        ingestion_date = synch_df['all'].apply(lambda x: get_ingestion_time(x))
+        # Get product name
+        product_name_sync = synch_df['all'].apply(lambda x: x.split('[INFO ] Product \'')[1].split('.')[0])
+        # Product type
+        synch_df['product_type'] = product_name_sync.apply(lambda x: get_product_type(x))
+        # Timeliness = ingestion_date - sensing_date (in hours)
+        synch_df['timeliness'] = (ingestion_date - product_name_sync.apply(lambda x: get_sensing_time(x)))\
+            .apply(lambda x: pd.to_timedelta(x).total_seconds() / 3600)
+        # Product size (in Gb)
+        synch_df['size'] = synch_df['all'].apply(lambda x: int(x.split('(')[1].split(' bytes')[0])/1024/1024/1024)
+        # Cleaning
+        synch_df['action'] = 'synchronized'
+        synch_df.drop(columns=['all'], inplace=True)
 
     # -- Get info on deleted products
-    del_df['timeliness'] = 0
-    del_df['size'] = 0
-    del_df['product_type'] = 'Unknown'
-    del_df['action'] = 'deleted'
-    del_df.drop(columns=['all'], inplace=True)
+    if del_df.shape[0] != 0:
+        del_df['timeliness'] = 0
+        del_df['size'] = 0
+        del_df['product_type'] = 'Unknown'
+        del_df['action'] = 'deleted'
+        del_df.drop(columns=['all'], inplace=True)
 
     # -- Get info on ingested products (ie with file scanner)
-    # Get product name
-    product_name_ing = ing_df['all'].apply(lambda x: x.split('file:')[1].split('.')[0].split('/')[-1])
-    # Product type
-    ing_df['product_type'] = product_name_ing.apply(lambda x: get_product_type(x))
-    # Timeliness = ingestion_date - sensing_date
-    ing_df['timeliness'] = 0
-    # Product size (in Gb)
-    ing_df['size'] = ing_df['all'].apply(lambda x: int(x.split('(')[1].split(' bytes')[0])/1024/1024/1024)
-    # Cleaning
-    ing_df['action'] = 'fscanner'
-    ing_df.drop(columns=['all'], inplace=True)
+    if ing_df.shape[0] != 0:
+        # Get product name
+        product_name_ing = ing_df['all'].apply(lambda x: x.split('file:')[1].split('.')[0].split('/')[-1])
+        # Product type
+        ing_df['product_type'] = product_name_ing.apply(lambda x: get_product_type(x))
+        # Timeliness = ingestion_date - sensing_date
+        ing_df['timeliness'] = 0
+        # Product size (in Gb)
+        ing_df['size'] = ing_df['all'].apply(lambda x: int(x.split('(')[1].split(' bytes')[0])/1024/1024/1024)
+        # Cleaning
+        ing_df['action'] = 'fscanner'
+        ing_df.drop(columns=['all'], inplace=True)
 
     return synch_df.append(ing_df).append(del_df)
 
