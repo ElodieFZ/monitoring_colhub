@@ -204,8 +204,14 @@ def read_logs_dhus(log_day, day):
     # Parse logfile
     synch_list, ingested_list, down_list, deleted_list, new_users, deleted_users = check_logfile(log_day)
 
+    # Check products downloaded
+    download_df = check_downloaded(down_list)
+
     # Check products input
     input_df = check_synchronized(synch_list, ingested_list, deleted_list)
+
+    if input_df.shape[0] == 0:
+        return None, download_df, 0, 0
 
     # Extra information needed for output csv file
     input_df['day'] = day
@@ -224,8 +230,5 @@ def read_logs_dhus(log_day, day):
         input_stats_tmp = pd.concat([stats_sum, stats_nb], axis=1)
 
     input_stats = input_stats_tmp.rename(columns={'action': 'nb_products'}).reset_index()
-
-    # Check products downloaded
-    download_df = check_downloaded(down_list)
 
     return input_stats, download_df, new_users, deleted_users
