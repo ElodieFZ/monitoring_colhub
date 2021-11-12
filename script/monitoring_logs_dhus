@@ -76,7 +76,7 @@ if __name__ == '__main__':
             logger.error('so no processing done for the day')
         else:
             logger.info(logfile)
-            inputs_tmp, downloaded, new_users, deleted_users = monitoring_logs.read_logs_dhus(logfile[0])
+            inputs_tmp, downloaded, new_users, deleted_users = monitoring_logs.read_logs_dhus(logfile[0], iday)
             users.append({'log_date': iday, 'new_users': new_users, 'deleted_users': deleted_users})
             try:
                 outputs = outputs.append(downloaded)
