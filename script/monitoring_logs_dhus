@@ -58,6 +58,8 @@ if __name__ == '__main__':
     suffix = list(args.dhus_logdir.rglob('*.log'))[0].stem.split('--')[0]
 
     users = []
+    ksat = []
+    eumetsat = []
     outputs = None
     inputs = None
     for iday in pd.date_range(day1, day2):
@@ -76,8 +78,11 @@ if __name__ == '__main__':
             logger.error('so no processing done for the day')
         else:
             logger.info(logfile)
-            inputs_tmp, downloaded, new_users, deleted_users = monitoring_logs.read_logs_dhus(logfile[0], iday)
+            inputs_tmp, downloaded, new_users, deleted_users, ksat, eumetsat = \
+                monitoring_logs.read_logs_dhus(logfile[0], iday)
             users.append({'log_date': iday, 'new_users': new_users, 'deleted_users': deleted_users})
+            ksat.append({'log_date': iday, 'ksat': ksat})
+            eumetsat.append({'log_date': iday, 'eumetsat': eumetsat})
             try:
                 outputs = outputs.append(downloaded)
             except AttributeError:
@@ -90,6 +95,8 @@ if __name__ == '__main__':
     if 'frontend' in suffix:
         suffix = str(args.dhus_logdir).split('/')[-1] + '_' + suffix
     pd.DataFrame(users).to_csv((args.output_dir / (suffix + '_users')).with_suffix('.csv'), index=False, mode='a', header=None)
+    pd.DataFrame(ksat).to_csv((args.output_dir / (suffix + '_ksat')).with_suffix('.csv'), index=False, mode='a', header=None)
+    pd.DataFrame(eumetsat).to_csv((args.output_dir / (suffix + '_eumetsat')).with_suffix('.csv'), index=False, mode='a', header=None)
     if outputs is not None:
         pd.DataFrame(outputs).to_csv((args.output_dir / (suffix + '_outputs')).with_suffix('.csv'), index=False,
                                      mode='a', \
