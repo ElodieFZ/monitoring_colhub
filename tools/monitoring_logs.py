@@ -217,7 +217,7 @@ def read_logs_dhus(log_day, day):
     input_df = check_synchronized(synch_list, ingested_list, deleted_list)
 
     if input_df.shape[0] == 0:
-        return None, download_df, 0, 0
+        return None, download_df, 0, 0, 0, 0
 
     # Extra information needed for output csv file
     input_df['day'] = day
