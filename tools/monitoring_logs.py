@@ -185,12 +185,13 @@ def check_synchronized(list_synch, list_ing, list_del):
 
     # -- Get info on ingested products (ie with file scanner)
     if ing_df.shape[0] != 0:
+        ingestion_date = ing_df['all'].apply(lambda x: get_ingestion_time(x))
         # Get product name
         product_name_ing = ing_df['all'].apply(lambda x: x.split('file:')[1].split('.')[0].split('/')[-1])
         # Product type
         ing_df['product_type'] = product_name_ing.apply(lambda x: get_product_type(x))
         # Timeliness = ingestion_date - sensing_date
-        ing_df['timeliness'] = (ingestion_date - product_name_sync.apply(lambda x: get_sensing_time(x))) \
+        ing_df['timeliness'] = (ingestion_date - product_name_ing.apply(lambda x: get_sensing_time(x))) \
             .apply(lambda x: pd.to_timedelta(x).total_seconds() / 3600)
         # Product size (in Gb)
         ing_df['size'] = ing_df['all'].apply(lambda x: int(x.split('(')[1].split(' bytes')[0])/1024/1024/1024)
