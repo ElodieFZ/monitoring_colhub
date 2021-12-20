@@ -117,8 +117,7 @@ def check_logfile(myfile):
     deleted = []
     users_new = 0
     users_deleted = 0
-    ksat = 0
-    eumetsat = 0
+    ingested_historical = 0
     sat = myfile.stem.split('-')[0]
     if sat == 'S5p':
         pattern = '.nc'
@@ -132,11 +131,12 @@ def check_logfile(myfile):
             elif all(x in line for x in ["download by", "completed"]):
                 downloaded.append(line)
             elif 'Ingestion processing complete for product file' in line:
-                ingested.append(line)
-                if 'ksat-incoming' in line:
-                    ksat += 1
-                elif 'EUMETSAT' in line:
-                    eumetsat += 1
+                # Get details for 'regular' ingested products (from KSAT and EUMETSAT)
+                if any(x in line for x in ['ksat-incoming', 'EUMETSAT']):
+                    ingested.append(line)
+                # For historical data ingested manually, only the number is useful
+                else:
+                    ingested_historical += 1
             elif 'deleted globally' in line:
                 deleted.append(line)
             # For user creation, need to check if it's successfull with the next line in the log file
@@ -148,7 +148,7 @@ def check_logfile(myfile):
             elif 'Delete User' in line:
                 users_deleted += 1
 
-    return synchronized, ingested, downloaded, deleted, users_new, users_deleted, ksat, eumetsat
+    return synchronized, ingested, downloaded, deleted, users_new, users_deleted, ingested_historical
 
 
 def check_synchronized(list_synch, list_ing, list_del):
@@ -190,7 +190,8 @@ def check_synchronized(list_synch, list_ing, list_del):
         # Product type
         ing_df['product_type'] = product_name_ing.apply(lambda x: get_product_type(x))
         # Timeliness = ingestion_date - sensing_date
-        ing_df['timeliness'] = 0
+        ing_df['timeliness'] = (ingestion_date - product_name_sync.apply(lambda x: get_sensing_time(x))) \
+            .apply(lambda x: pd.to_timedelta(x).total_seconds() / 3600)
         # Product size (in Gb)
         ing_df['size'] = ing_df['all'].apply(lambda x: int(x.split('(')[1].split(' bytes')[0])/1024/1024/1024)
         # Cleaning
@@ -208,7 +209,7 @@ def read_logs_dhus(log_day, day):
     logger.debug(f'Checking logfile {log_day}')
 
     # Parse logfile
-    synch_list, ingested_list, down_list, deleted_list, new_users, deleted_users, ksat, eumetsat = check_logfile(log_day)
+    synch_list, ingested_list, down_list, deleted_list, new_users, deleted_users, ingested_historical = check_logfile(log_day)
 
     # Check products downloaded
     download_df = check_downloaded(down_list)
@@ -217,7 +218,7 @@ def read_logs_dhus(log_day, day):
     input_df = check_synchronized(synch_list, ingested_list, deleted_list)
 
     if input_df.shape[0] == 0:
-        return None, download_df, 0, 0, 0, 0
+        return None, download_df, 0, 0, 0
 
     # Extra information needed for output csv file
     input_df['day'] = day
@@ -237,4 +238,4 @@ def read_logs_dhus(log_day, day):
 
     input_stats = input_stats_tmp.rename(columns={'action': 'nb_products'}).reset_index()
 
-    return input_stats, download_df, new_users, deleted_users, ksat, eumetsat
+    return input_stats, download_df, new_users, deleted_users, ingested_historical
