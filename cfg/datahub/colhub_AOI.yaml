@@ -1,4 +1,4 @@
 name: 'colhub_AOI'
-url: 'http://sentinelhub2.met.no:8096'
+url: 'https://colhub-archive.met.no'
 user: 'monitoring'
 credentials: '/home/nbs/colhub/myValues.txt'
