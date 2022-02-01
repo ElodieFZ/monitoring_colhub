@@ -6,8 +6,8 @@
 #$ -q research-el7.q
 #$ -pe mpi 1
 #$ -j y
-#$ -wd /lustre/storeB/project/NBS2/sentinel/production/NorwAREA/netCDFNBS_work/prod_tmp/logs/ppi
-#$ -o /lustre/storeB/project/NBS2/sentinel/production/NorwAREA/netCDFNBS_work/prod_tmp/logs/ppi
+#$ -wd /lustre/storeB/project/NBS2/sentinel/production/NorwAREA/netCDFNBS_work/production/logs/ppi
+#$ -o /lustre/storeB/project/NBS2/sentinel/production/NorwAREA/netCDFNBS_work/production/logs/ppi
 
 export PYTHONPATH=/home/nbs/colhub:$PYTHONPATH
 source /modules/centos7/conda/Feb2021/etc/profile.d/conda.sh
@@ -22,12 +22,11 @@ conda activate production-04-2021
 
 #set -x
 
-#d1=$(date -d '-3 day' +%Y%m%d)
 d1=$(date -d '-1 day' +%Y%m%d)
 d2=$(date -d '-1 day' +%Y%m%d)
 
-logdir=/lustre/storeB/project/NBS2/sentinel/production/NorwAREA/netCDFNBS_work/prod_tmp/logs/colhub
-monitdir=/lustre/storeB/project/NBS2/sentinel/production/NorwAREA/netCDFNBS_work/prod_tmp/monitoring/dhus_logs
+logdir=/lustre/storeB/project/NBS2/sentinel/production/NorwAREA/netCDFNBS_work/production/logs/colhub
+monitdir=/lustre/storeB/project/NBS2/sentinel/production/NorwAREA/netCDFNBS_work/production/monitoring/dhus_logs
 
 # Check dhus instances logs
 
