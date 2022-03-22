@@ -93,8 +93,8 @@ if __name__ == '__main__':
         # Write list of products_found to text file
         if len(products_found) > 0:
             if args.write_list:
-                logger.info(f"Writing list to {args.outfile_list}")
-                products_found.to_csv(args.list_outdir / ('_'.join(['products_list_in', cfg_datahub['name']]) + '.csv') , header=False, index=False, mode='w')
+                logger.info(f"Writing list to {args.list_outdir}")
+                products_found[['title', 'uuid']].to_csv(args.list_outdir / ('_'.join(['products_list_in', cfg_datahub['name']]) + '.csv') , header=False, index=False, mode='a')
         if args.write_nb:
             out.append({'product': args.product, 'area': args.area, 'sensing_date': date, 'nb_products': len(products_found)})
         else:
