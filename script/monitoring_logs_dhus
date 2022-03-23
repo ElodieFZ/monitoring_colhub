@@ -63,11 +63,18 @@ if __name__ == '__main__':
     inputs = None
     for iday in pd.date_range(day1, day2):
 
+    	# On 21/03/2022, the colhub FE was rebuilt, logs suffix has been updated to keep logs
+    	# from both instances
+        if suffix == 'frontend-global' and iday > pd.to_datetime('20220320', format='%Y%m%d'):
+            suffix_for_logs = 'frontend-global-2022'
+        else:
+            suffix_for_logs = suffix
+
         # Get logfile name for the day
         if iday == pd.to_datetime('today').day:
-            logfile = list(args.dhus_logdir.rglob(f'{suffix}.log'))
+            logfile = list(args.dhus_logdir.rglob(f'{suffix_for_logs}.log'))
         else:
-            logfile = list(args.dhus_logdir.rglob(f'{suffix}--{iday.strftime("%Y-%m-%d")}-*.log'))
+            logfile = list(args.dhus_logdir.rglob(f'{suffix_for_logs}--{iday.strftime("%Y-%m-%d")}-*.log'))
 
         if len(logfile) == 0:
             logger.error(f'No log file found in {args.dhus_logdir} for day {iday}')
