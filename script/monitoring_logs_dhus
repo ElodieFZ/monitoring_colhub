@@ -65,7 +65,7 @@ if __name__ == '__main__':
 
     	# On 21/03/2022, the colhub FE was rebuilt, logs suffix has been updated to keep logs
     	# from both instances
-        if suffix == 'frontend-global' and iday > pd.to_datetime('20220320', format='%Y%m%d'):
+        if args.dhus_logdir.name == 'NBS' and suffix == 'frontend-global' and iday > pd.to_datetime('20220320', format='%Y%m%d'):
             suffix_for_logs = 'frontend-global-2022'
         else:
             suffix_for_logs = suffix
