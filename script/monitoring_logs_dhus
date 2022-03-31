@@ -98,7 +98,10 @@ if __name__ == '__main__':
                 inputs = inputs_tmp
 
     if 'frontend' in suffix:
-        suffix = str(args.dhus_logdir).split('/')[-1] + '_' + suffix
+        if args.dhus_logdir.name == 'NBS' and suffix == 'frontend-global-2022':
+            suffix = 'NBS_frontend-global' 
+        else:
+            suffix = str(args.dhus_logdir).split('/')[-1] + '_' + suffix
     pd.DataFrame(users).to_csv((args.output_dir / (suffix + '_users')).with_suffix('.csv'), index=False, mode='a', header=None)
     pd.DataFrame(ingested).to_csv((args.output_dir / (suffix + '_ingested_historical')).with_suffix('.csv'), index=False, mode='a', header=None)
     if outputs is not None:
