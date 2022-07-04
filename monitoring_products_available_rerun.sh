@@ -20,7 +20,10 @@ conda activate production-04-2021
 # Request several FEs (within and outside MET) to check how many products are available per sensing date
 # Default is to check colhub FE, colhub ESA FE, scihub (used as monitoring reference), colhub AOI FE
 #
-# Running as cron every night - DO NOT MODIFY -
+# Twin of monitoring_products_available.sh to be used for punctual needs:
+#  - rerun on specific dates
+#  - test new settings
+#  - ...
 #
 # -------------------------------------------------------------
 
