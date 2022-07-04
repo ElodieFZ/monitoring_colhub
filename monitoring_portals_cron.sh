@@ -22,6 +22,7 @@ conda activate production-04-2021
 #
 # Running as cron every night - DO NOT MODIFY -
 #
+# Outputs used in notebooks /home/nbs/notebooks/daily_monitoring/products_portals.ipynb
 # -------------------------------------------------------------
 
 ##set -x
