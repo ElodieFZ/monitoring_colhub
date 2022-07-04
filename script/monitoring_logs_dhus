@@ -84,10 +84,9 @@ if __name__ == '__main__':
             logger.error('so no processing done for the day')
         else:
             logger.info(logfile)
-            inputs_tmp, downloaded, new_users, deleted_users, ingested_historical = \
+            inputs_tmp, downloaded, new_users, deleted_users = \
                 monitoring_logs.read_logs_dhus(logfile[0], iday)
             users.append({'log_date': iday, 'new_users': new_users, 'deleted_users': deleted_users})
-            ingested.append({'log_date': iday, 'ingested': ingested_historical})
             try:
                 outputs = outputs.append(downloaded)
             except AttributeError:
@@ -103,7 +102,6 @@ if __name__ == '__main__':
         else:
             suffix = str(args.dhus_logdir).split('/')[-1] + '_' + suffix
     pd.DataFrame(users).to_csv((args.output_dir / (suffix + '_users')).with_suffix('.csv'), index=False, mode='a', header=None)
-    pd.DataFrame(ingested).to_csv((args.output_dir / (suffix + '_ingested_historical')).with_suffix('.csv'), index=False, mode='a', header=None)
     if outputs is not None:
         pd.DataFrame(outputs).to_csv((args.output_dir / (suffix + '_outputs')).with_suffix('.csv'), index=False,
                                      mode='a', \

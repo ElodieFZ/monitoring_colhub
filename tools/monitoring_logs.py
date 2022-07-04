@@ -117,7 +117,6 @@ def check_logfile(myfile):
     deleted = []
     users_new = 0
     users_deleted = 0
-    ingested_historical = 0
     sat = myfile.stem.split('-')[0]
     if sat == 'S5p':
         pattern = '.nc'
@@ -131,12 +130,7 @@ def check_logfile(myfile):
             elif all(x in line for x in ["download by", "completed"]):
                 downloaded.append(line)
             elif 'Ingestion processing complete for product file' in line:
-                # Get details for 'regular' ingested products (from KSAT and EUMETSAT)
-                if any(x in line for x in ['ksat-incoming', 'EUMETSAT']):
-                    ingested.append(line)
-                # For historical data ingested manually, only the number is useful
-                else:
-                    ingested_historical += 1
+                ingested.append(line)
             elif 'deleted globally' in line:
                 deleted.append(line)
             # For user creation, need to check if it's successfull with the next line in the log file
@@ -148,7 +142,7 @@ def check_logfile(myfile):
             elif 'Delete User' in line:
                 users_deleted += 1
 
-    return synchronized, ingested, downloaded, deleted, users_new, users_deleted, ingested_historical
+    return synchronized, ingested, downloaded, deleted, users_new, users_deleted
 
 
 def check_synchronized(list_synch, list_ing, list_del):
@@ -210,7 +204,7 @@ def read_logs_dhus(log_day, day):
     logger.debug(f'Checking logfile {log_day}')
 
     # Parse logfile
-    synch_list, ingested_list, down_list, deleted_list, new_users, deleted_users, ingested_historical = check_logfile(log_day)
+    synch_list, ingested_list, down_list, deleted_list, new_users, deleted_users = check_logfile(log_day)
 
     # Check products downloaded
     download_df = check_downloaded(down_list)
@@ -219,7 +213,7 @@ def read_logs_dhus(log_day, day):
     input_df = check_synchronized(synch_list, ingested_list, deleted_list)
 
     if input_df.shape[0] == 0:
-        return None, download_df, 0, 0, 0
+        return None, download_df, 0, 0
 
     # Extra information needed for output csv file
     input_df['day'] = day
@@ -239,4 +233,4 @@ def read_logs_dhus(log_day, day):
 
     input_stats = input_stats_tmp.rename(columns={'action': 'nb_products'}).reset_index()
 
-    return input_stats, download_df, new_users, deleted_users, ingested_historical
+    return input_stats, download_df, new_users, deleted_users
