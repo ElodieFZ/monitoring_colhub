@@ -1,5 +1,5 @@
 #!/bin/bash -f
-#$ -N colhub_query
+#$ -N portals
 #$ -S /bin/bash
 #$ -l h_rt=02:30:00
 #$ -l h_vmem=2G
@@ -17,7 +17,7 @@ conda activate production-04-2021
 #
 # Colhub monitoring: compare number products available on different portals
 #
-# Request several FEs (within and outside MET) to check how many products are available per sensing date
+# Request several FEs (within and outside MET) to check how many products are available per sensing date and per product.
 # Default is to check colhub FE, colhub ESA FE, scihub (used as monitoring reference), colhub AOI FE
 #
 # Running as cron every night - DO NOT MODIFY -

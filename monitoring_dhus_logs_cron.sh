@@ -1,5 +1,5 @@
 #!/bin/bash -f
-#$ -N colhub_logs
+#$ -N dhus_logs
 #$ -S /bin/bash
 #$ -l h_rt=02:30:00
 #$ -l h_vmem=2G
@@ -15,7 +15,10 @@ conda activate production-04-2021
 
 # -------------------------------------------------------------
 #
-# Colhub monitoring: check BEs logs, request products on FEs
+# Colhub monitoring: 
+#   - check BEs logs for ingestion
+#   - check FEs logs for downloads, number of users 
+#
 # Running as cron every night - DO NOT MODIFY -
 #
 # -------------------------------------------------------------
