@@ -68,13 +68,14 @@ for hub in $hubs; do
 done
 
 ## 2022-04-07 - BE are now in more secure network so unavailable for direct queries
-### For backends, request global data only
-##products='S1 S2L1C S2L2A S3 S5p'
-##areas='global AOI'
-##for area in $areas; do
-##  for p in $products; do
-##    python /home/nbs/colhub/script/request_colhub -p ${p} -d1 $d1 -d2 $d2 -wn True -of ${monitdir}/products_in_BE_${p}_${area}.csv -dh BE_${p}_${area} -l ${logdir} -a global
-##  done
-##done
-##python /home/nbs/colhub/script/request_colhub -p S2L1C -d1 $d1 -d2 $d2 -wn True -of ${monitdir}/products_in_BE_S2DEM_global.csv -dh BE_S2DEM_global -l ${logdir} -a global
+## 2022-07-05 - BE accessible again
+# For backends, request global data only
+products='S1 S2L1C S2L2A S3 S5p'
+areas='global AOI'
+for area in $areas; do
+  for p in $products; do
+    python /home/nbs/colhub/script/request_colhub -p ${p} -d1 $d1 -d2 $d2 -wn True -of ${monitdir}/products_in_BE_${p}_${area}.csv -dh BE_${p}_${area} -l ${logdir} -a global
+  done
+done
+python /home/nbs/colhub/script/request_colhub -p S2L1C -d1 $d1 -d2 $d2 -wn True -of ${monitdir}/products_in_BE_S2DEM_global.csv -dh BE_S2DEM_global -l ${logdir} -a global
 
