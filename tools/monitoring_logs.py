@@ -13,69 +13,9 @@ import logging
 import pandas as pd
 import datetime as dt
 import numpy as np
+import utils
 
 logger = logging.getLogger(__name__)
-
-
-def get_sensing_time(product_name):
-
-    if 'DTERRENG' in product_name:
-        pattern = product_name.split('_')[-6]
-    elif product_name[0:2] == 'S3':
-        pattern = product_name[16:31]
-    elif product_name[0:3] == 'S5p':
-        pattern = product_name[20:35]
-    else:
-        pattern = product_name.split('_')[-5]
-
-    try:
-        return dt.datetime.strptime(pattern, '%Y%m%dT%H%M%S')
-    except ValueError:
-        logger.error(f'Problem trying to get sensing information from product name ({product_name}).')
-        return None
-
-
-def get_ingestion_time(string):
-
-    try:
-        return dt.datetime.strptime(string.split('[')[2].split(']')[0], '%Y-%m-%d %H:%M:%S,%f')
-    except IndexError:
-        logger.error(f'Problem trying to get ingestion information from product name ({product_name}).')
-        return None
-
-
-def get_product_type(product):
-    type = 'Unknown'
-    try:
-        if product[0:2] == 'S1':
-            type = product.split('_')[2]
-        elif product[0:2] == 'S2':
-            type = product.split('_')[1]
-            if not type.startswith('M'):
-                type = 'Unknown'
-        elif product[0:2] == 'S3':
-            tmp = product.split('_')
-            if tmp[1] == 'SL':
-                type = 'SLSTR_L' + tmp[2]
-            elif tmp[1] == 'SR':
-                type = 'SRAL_L' + tmp[2]
-            elif tmp[1] == 'OL':
-                type = 'OLCI_L' + tmp[2]
-            elif tmp[1] == 'SY':
-                type = 'SYN_L' + tmp[2]
-        elif product[0:2] == 'S5':
-            tmp = product.split('_')
-            if tmp[1] == 'OFFL':
-                type = 'OFFL_' + tmp[2]
-            elif tmp[1] == 'NRTI':
-                type = 'NRTI_' + tmp[2]
-        if 'DTERRENG' in product:
-            type = type + '_DTERRENG'
-    except TypeError:
-        type = 'Unknown'
-    if type == 'Unknown':
-        logger.info(f'Type not found for product {product}')
-    return type
 
 
 def check_downloaded(mylist):
@@ -98,7 +38,7 @@ def check_downloaded(mylist):
     log_df['product'] = log_df['all'].apply(lambda x: x.split('(')[1].split(')')[0])
 
     # Product type
-    log_df['product_type'] = log_df['product'].apply(lambda x: get_product_type(x))
+    log_df['product_type'] = log_df['product'].apply(lambda x: utils.get_product_type(x))
 
     # Get product size
     log_df['size'] = log_df['all'].apply(lambda x: x.split('-> ')[1].split()[0])
@@ -155,13 +95,13 @@ def check_synchronized(list_synch, list_ing, list_del):
 
     # Ingestion date
     if synch_df.shape[0] != 0:
-        ingestion_date = synch_df['all'].apply(lambda x: get_ingestion_time(x))
+        ingestion_date = synch_df['all'].apply(lambda x: utils.get_ingestion_time(x))
         # Get product name
         product_name_sync = synch_df['all'].apply(lambda x: x.split('[INFO ] Product \'')[1].split('.')[0])
         # Product type
-        synch_df['product_type'] = product_name_sync.apply(lambda x: get_product_type(x))
+        synch_df['product_type'] = product_name_sync.apply(lambda x: utils.get_product_type(x))
         # Timeliness = ingestion_date - sensing_date (in hours)
-        synch_df['timeliness'] = (ingestion_date - product_name_sync.apply(lambda x: get_sensing_time(x)))\
+        synch_df['timeliness'] = (ingestion_date - product_name_sync.apply(lambda x: utils.get_sensing_time(x)))\
             .apply(lambda x: pd.to_timedelta(x).total_seconds() / 3600)
         # Product size (in Gb)
         synch_df['size'] = synch_df['all'].apply(lambda x: int(x.split('(')[1].split(' bytes')[0])/1024/1024/1024)
@@ -179,13 +119,13 @@ def check_synchronized(list_synch, list_ing, list_del):
 
     # -- Get info on ingested products (ie with file scanner)
     if ing_df.shape[0] != 0:
-        ingestion_date = ing_df['all'].apply(lambda x: get_ingestion_time(x))
+        ingestion_date = ing_df['all'].apply(lambda x: utils.get_ingestion_time(x))
         # Get product name
         product_name_ing = ing_df['all'].apply(lambda x: x.split('file:')[1].split('.')[0].split('/')[-1])
         # Product type
-        ing_df['product_type'] = product_name_ing.apply(lambda x: get_product_type(x))
+        ing_df['product_type'] = product_name_ing.apply(lambda x: utils.get_product_type(x))
         # Timeliness = ingestion_date - sensing_date
-        ing_df['timeliness'] = (ingestion_date - product_name_ing.apply(lambda x: get_sensing_time(x))) \
+        ing_df['timeliness'] = (ingestion_date - product_name_ing.apply(lambda x: utils.get_sensing_time(x))) \
             .apply(lambda x: pd.to_timedelta(x).total_seconds() / 3600)
         # Product size (in Gb)
         ing_df['size'] = ing_df['all'].apply(lambda x: int(x.split('(')[1].split(' bytes')[0])/1024/1024/1024)

@@ -34,6 +34,33 @@ def setup_log(myname=None):
     return log_info
 
 
+def get_sensing_time(product_name):
+
+    if 'DTERRENG' in product_name:
+        pattern = product_name.split('_')[-6]
+    elif product_name[0:2] == 'S3':
+        pattern = product_name[16:31]
+    elif product_name[0:3] == 'S5p':
+        pattern = product_name[20:35]
+    else:
+        pattern = product_name.split('_')[-5]
+
+    try:
+        return dt.datetime.strptime(pattern, '%Y%m%dT%H%M%S')
+    except ValueError:
+        logger.error(f'Problem trying to get sensing information from product name ({product_name}).')
+        return None
+
+
+def get_ingestion_time(string):
+
+    try:
+        return dt.datetime.strptime(string.split('[')[2].split(']')[0], '%Y-%m-%d %H:%M:%S,%f')
+    except IndexError:
+        logger.error(f'Problem trying to get ingestion information from product name ({product_name}).')
+        return None
+
+
 def get_product_type(product):
     """ From a product title, get it's type """
     type = 'Unknown'
@@ -67,24 +94,4 @@ def get_product_type(product):
     if type == 'Unknown':
         logger.info(f'Type not found for product {product}')
     return type
-
-
-def get_sensing_time(product_name):
-    """ From a product title, get its sensing time """
-    if 'DTERRENG' in product_name:
-        pattern = product_name.split('_')[-6]
-    elif product_name[0:2] == 'S3':
-        pattern = product_name[16:31]
-    elif product_name[0:3] == 'S5p':
-        pattern = product_name[20:35]
-    else:
-        pattern = product_name.split('_')[-5]
-
-    try:
-        return dt.datetime.strptime(pattern, '%Y%m%dT%H%M%S')
-    except ValueError:
-        logger.error(f'Problem trying to get sensing information from product name ({product_name}).')
-        return None
-
-
 
