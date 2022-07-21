@@ -1,0 +1,24 @@
+credentials: '/home/nbs/colhub/mdp_monitoring.txt'
+
+BE_S1_global: 'http://ppi-distribution:8080/#/home'
+BE_S2DEM_global: 'http://ppi-distribution:8083/#/home'
+BE_S2L1C_global: 'http://ppi-distribution:8081/#/home'
+BE_S2L2A_global: 'http://ppi-distribution:8082/#/home'
+BE_S3_global: 'http://ppi-distribution:8084/#/home'
+BE_S5p_global: 'http://ppi-distribution:8086/#/home'
+
+BE_S1_AOI: 'http://ppi-distribution:8087/#/home'
+BE_S2L1C_AOI: 'http://ppi-distribution:8089/#/home'
+BE_S2L2A_AOI: 'http://ppi-distribution:8090/#/home'
+BE_S3_AOI: 'http://ppi-distribution:8085/#/home'
+BE_S5p_AOI: 'http://ppi-distribution:8088/#/home'
+
+colhub_AOI: 'https://colhub-archive.met.no'
+colhub_global: 'https://colhub.met.no'
+esahub_global: 'https://sentinelhub2.met.no'
+
+coda: 'https://coda.eumetsat.int/#/home'
+s5phub: 'https://s5phub.copernicus.eu/dhus/#/home'
+scihub: 'https://scihub.copernicus.eu/dhus/#/home'
+scihub_sentinelAPI: 'https://apihub.copernicus.eu/apihub'
+

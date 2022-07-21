@@ -15,7 +15,7 @@ import yaml
 import datetime as dt
 import pandas as pd
 import random
-from sentinelsat import SentinelAPI, read_geojson, geojson_to_wkt
+import sentinelsat
 
 logger = logging.getLogger(__name__)
 
@@ -31,24 +31,21 @@ def pretty_date(mydate):
     return mydate.strftime("%d %B %Y - %H:%M:%S")
 
 
-def get_cred(url, file, user=None):
+def get_cred(url, mdpfile):
     """
     Read credentials from text file.
     Return [user, pwd]
     """
-    tmp = pd.read_csv(file, sep=';', names=['url', 'user', 'password'])
+    tmp = pd.read_csv(mdpfile, sep=';', names=['url', 'user', 'password'])
     ok = tmp[tmp['url'] == url]
-    if user:
-        ok = ok[ok['user'] == user]
     randint = random.randint(0, len(ok)-1)
     return ok.iloc[randint]['user'], ok.iloc[randint]['password']
 
 
-
-def connect_hub(cfg):
+def connect_hub(hub_url, mdpfile):
     """ Connect to sentinel datahub """
-    user, pwd = get_cred(cfg['url'], cfg['credentials'], cfg.get('user'))
-    return SentinelAPI(user, pwd, cfg['url'], show_progressbars=False)
+    user, pwd = get_cred(hub_url, mdpfile)
+    return sentinelsat.SentinelAPI(user, pwd, hub_url, show_progressbars=False)
 
 
 def call_api(myapi, **myquery):
@@ -66,7 +63,7 @@ def query_hub(myapi, sensing_start, sensing_end, footprint, myquery):
     if footprint.stem.startswith('global'):
         products = myapi.query(date=(sensing_start, sensing_end), **myquery)
     else:
-        zone = geojson_to_wkt(read_geojson(footprint))
+        zone = sentinelsat.geojson_to_wkt(sentinelsat.read_geojson(footprint))
         products = myapi.query(zone, area_relation='Intersects', date=(sensing_start, sensing_end), **myquery)
 
     products_df = myapi.to_dataframe(products)
@@ -78,3 +75,38 @@ def query_hub(myapi, sensing_start, sensing_end, footprint, myquery):
 
     return products_df
 
+
+def download(myapi, myuuid, outdir):
+    """
+    Download a product knowing its uuid.
+    If product is not online, triggers the retrieval
+    """
+    logger.info(f'Trying to download product {myuuid}')
+    try:
+        product_info = myapi.get_product_odata(myuuid)
+    except sentinelsat.exceptions.SentinelAPIError as e:
+        logger.error(e)
+        return False
+    is_online = product_info['Online']
+
+    download_ok = False
+    asked_offline = False
+
+    if is_online:
+        logger.info(f'Product {myuuid} is online. Starting download.')
+        try:
+            myapi.download(myuuid, directory_path=outdir)
+            download_ok = True
+            logger.info(f'Product downloaded successfully.')
+        except (sentinelsat.sentinel.SentinelAPIError, sentinelsat.sentinel.InvalidChecksumError, AttributeError) as e:
+            logger.error('Download failed')
+            logger.error(e)
+    else:
+        logger.info(f'Product {myuuid} is not online, so trigger retrieval.')
+        try:
+            myapi.trigger_offline_retrieval(myuuid)
+            asked_offline = True
+            logger.info(f'Product retrieval triggered successfully.')
+        except:
+            logger.error('Some exception')
+    return download_ok

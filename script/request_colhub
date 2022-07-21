@@ -13,6 +13,8 @@ import pandas as pd
 from tools import utils, sentinel_hub
 
 
+#todo: replace -wn True/False and -wl True/False by action
+
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Get list of products from a Sentinel hub.')
     parser.add_argument('-p', dest='product', default='S1',
@@ -45,10 +47,10 @@ if __name__ == '__main__':
     # Otherwise, log to stdout
     logger = logging.getLogger()
     logger.setLevel(logging.INFO)
-    logger.addHandler(utils.setup_log(args.logdir/f"request_datahub_{args.product}--{dt.datetime.now().strftime('%Y%m%d-%H%M%S')}.log"))
+    logger.addHandler(utils.setup_log(args.logdir/f"request_hub_{args.datahub}_{args.product}--{dt.datetime.now().strftime('%Y%m%d-%H%M%S')}.log"))
 
     # Read datahub config file
-    with open((cfgdir / 'datahub' / args.datahub).with_suffix('.yaml')) as f:
+    with open((cfgdir / 'datahubs_monitoring').with_suffix('.yaml')) as f:
         cfg_datahub = yaml.load(f, Loader=yaml.FullLoader)
 
     # Default sensing start date is today
@@ -80,7 +82,7 @@ if __name__ == '__main__':
     #    query['ingestion_end'] = pd.to_datetime('today')
 
     # Connect to datahub
-    myhub = sentinel_hub.connect_hub(cfg_datahub)
+    myhub = sentinel_hub.connect_hub(cfg_datahub[args.datahub], cfg_datahub['credentials'])
 
     out = []
     for date in pd.date_range(sensing_start, sensing_end):

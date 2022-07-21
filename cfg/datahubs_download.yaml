@@ -1,0 +1,11 @@
+credentials: '/home/nbs/colhub/mdp_download.txt'
+
+colhub_AOI: 'https://colhub-archive.met.no'
+colhub_global: 'https://colhub.met.no'
+esahub_global: 'https://sentinelhub2.met.no'
+
+coda: 'https://coda.eumetsat.int/#/home'
+s5phub: 'https://s5phub.copernicus.eu/dhus/#/home'
+scihub: 'https://scihub.copernicus.eu/dhus/#/home'
+scihub_sentinelAPI: 'https://apihub.copernicus.eu/apihub'
+

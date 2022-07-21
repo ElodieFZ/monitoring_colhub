@@ -1,4 +1,0 @@
-name: 'colhub_AOI'
-url: 'https://colhub-archive.met.no'
-user: 'monitoring'
-credentials: '/home/nbs/colhub/myValues.txt'
