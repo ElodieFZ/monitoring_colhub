@@ -1,0 +1,114 @@
+#!/usr/bin/env python3
+
+"""
+
+Download products from scihub, using their uuid.
+For offline products, triggers its retrieval from LTA.
+Input products list = 2 csv files, one for HUB1 data, one for HUB2 data.
+Script will download data that is in HUB1 but not in HUB2.
+
+"""
+
+import argparse
+import pathlib
+import yaml
+import logging
+import datetime as dt
+import pandas as pd
+import copy
+from tools import utils, sentinel_hub
+
+
+def parse_arguments():
+    parser = argparse.ArgumentParser(description='Download products from a Sentinel hub.')
+    parser.add_argument("-dh", '--datahub', help=('datahub'), type=str, default="scihub")
+    parser.add_argument("-p", '--products', help="csv file used to keep track of downloading", type=pathlib.Path)
+    parser.add_argument('-p1', '--products_1', help="Input csv file containing information on products on hub 1. One line per product.", type=pathlib.Path)
+    parser.add_argument('-p2', '--products_2', help="Input csv file containing information on products on hub 2. One line per product.", type=pathlib.Path)
+    parser.add_argument('-u', '--user', help="which user to use for downloading", type=str, default='elodief')
+    parser.add_argument('-o', '--outdir', help="Directory for products download.", type=pathlib.Path)
+    parser.add_argument("-l", '--logdir', help=('Log directory'), type=pathlib.Path, required=True)
+    return parser.parse_args()
+    
+
+if __name__ == '__main__':
+
+    args = parse_arguments()
+    cfgdir = pathlib.Path(__file__).resolve().parent.parent / 'cfg'
+
+    # Log to file
+    logger = logging.getLogger()
+    logger.setLevel(logging.INFO)
+    # To get sentinelsat logs, level must be set to DEBUG
+    #logger.setLevel(logging.DEBUG)
+    logger.addHandler(utils.setup_log(args.logdir/f"download_datahub--{dt.datetime.now().strftime('%Y%m%d-%H%M%S')}.log"))
+
+    # Read datahub config file
+    with open((cfgdir / 'datahubs_download').with_suffix('.yaml')) as f:
+        cfg_datahub = yaml.load(f, Loader=yaml.FullLoader)
+
+    # Connect to datahub
+    myhub = sentinel_hub.connect_hub(cfg_datahub[args.datahub], cfg_datahub['credentials'], specific_user=args.user)
+
+    # If working csv file exists, read it
+    if args.products.is_file():
+        data = pd.read_csv(args.products, header=None, names=['title', 'uuid_colhub', 'uuid_scihub', 'in_scihub', 'in_colhub', 'downloaded'])
+
+    # Otherwise create it from the original csv files
+    else:
+        # Read products csv as pd.DataFrames
+        hub1 = pd.read_csv(args.products_1, header=None, names=['title', 'uuid'])
+        hub1['source'] = 'scihub'
+        hub2 = pd.read_csv(args.products_2, header=None, names=['title', 'uuid'])
+        hub2['source'] = 'colhub'
+
+        # Merge both dataframes on title -> will keeping ALL products
+        # Do not merge on uuid as is not necessarily the same
+        data_tmp = pd.merge(hub1, hub2, on='title', suffixes=('_scihub', '_colhub'), how='outer')
+
+        # Keep only non dterr data as they are not on scihub
+        data_tmp['dterr'] = data_tmp['title'].apply(lambda x: "DTERRENGDATA" in x)
+        data = copy.deepcopy(data_tmp[~data_tmp['dterr']]).drop('dterr', 1)
+        data['sensing_date'] = data['title'].apply(lambda x: utils.get_sensing_time(x))
+        data = data.set_index('sensing_date')
+
+        # Compute booleans to check which products exists in which hub
+        data['in_scihub'] = ~pd.isnull(data['uuid_scihub'])
+        data['in_colhub'] = ~pd.isnull(data['uuid_colhub'])
+
+        # Initialize column: has product been downloaded already?
+        data['downloaded'] = data['title'].map(lambda x: (args.outdir / x).with_suffix('.zip').is_file())
+
+        # Save for future use
+        data[['title', 'uuid_colhub', 'uuid_scihub', 'in_scihub', 'in_colhub', 'downloaded']].to_csv(args.products , header=False, index=False, mode='w')
+
+    # Need to check already downloaded files
+    # todo: but only check the files that are not already downloaded so that it does not take forever
+    # Update list of downloaded products
+    #data['downloaded'] = data['title'].map(lambda x: (args.outdir / x).with_suffix('.zip').is_file())
+
+    logger.info(f"{data['downloaded'].sum()} products already downloaded")
+
+    # Select products that we will try to download
+    max_products = 50
+    to_process = data[data['in_scihub'] & ~data['in_colhub'] & ~data['downloaded']].head(max_products)
+
+    #logger.info(to_process.head())
+
+    # Loop on products
+    downloaded  = to_process['uuid_scihub'].map(lambda x: sentinel_hub.download(myhub, x, args.outdir))
+
+    # -> warning: if the download ends with an unexpected Exception, this part of the script will no be executed,
+    #    so one will then ending up downloading forever the same products
+    # If it happens, maybe move this part to before the download attemps?
+
+    # Update list of downloaded products
+    to_process['downloaded'] = to_process['title'].map(lambda x: (args.outdir / x).with_suffix('.zip').is_file())
+    data.update(to_process)
+
+    # Update working csv file
+    # (to keep track of which products have been downloaded)
+    data[['title', 'uuid_colhub', 'uuid_scihub', 'in_scihub', 'in_colhub', 'downloaded']].to_csv(args.products, header=False, index=False, mode='w')
+
+    logger.info('Done')         
+

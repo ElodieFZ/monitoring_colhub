@@ -31,25 +31,23 @@ def pretty_date(mydate):
     return mydate.strftime("%d %B %Y - %H:%M:%S")
 
 
-def get_cred(url, mdpfile):
+def get_cred(url, mdpfile, user=None):
     """
     Read credentials from text file.
     Return [user, pwd]
     """
     tmp = pd.read_csv(mdpfile, sep=';', names=['url', 'user', 'password'])
     ok = tmp[tmp['url'] == url]
+    if user:
+        ok = ok[ok['user'] == user]
     randint = random.randint(0, len(ok)-1)
     return ok.iloc[randint]['user'], ok.iloc[randint]['password']
 
 
-def connect_hub(hub_url, mdpfile):
+def connect_hub(hub_url, mdpfile, specific_user=None):
     """ Connect to sentinel datahub """
-    user, pwd = get_cred(hub_url, mdpfile)
+    user, pwd = get_cred(hub_url, mdpfile, user=specific_user)
     return sentinelsat.SentinelAPI(user, pwd, hub_url, show_progressbars=False)
-
-
-def call_api(myapi, **myquery):
-    return myapi.query(**myquery)
 
 
 def query_hub(myapi, sensing_start, sensing_end, footprint, myquery):
