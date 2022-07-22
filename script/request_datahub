@@ -14,6 +14,7 @@ from tools import utils, sentinel_hub
 
 
 #todo: replace -wn True/False and -wl True/False by action
+# todo: replace list_outdir by the file name directly +
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Get list of products from a Sentinel hub.')
@@ -25,10 +26,6 @@ def parse_arguments():
                         help='First sensing date (YYYYMMDD). Default is current day.')
     parser.add_argument('-d2', dest='syyyymmdd2', required=False,
                         help='Second sensing date (YYYYMMDD). Default is first date.')
-    parser.add_argument('-id1', dest='iyyyymmdd1', required=False,
-                        help='First ingestion date (YYYYMMDD). Default is current day.')
-    parser.add_argument('-id2', dest='iyyyymmdd2', required=False,
-                        help='Second ingestion date (YYYYMMDD). Default is first date.')
     parser.add_argument("-wl", "--write_list", help="Write list of products found to file?", type=str, default=False)
     parser.add_argument("-ld", "--list_outdir", help="Text file where to write list of products found", type=pathlib.Path, default=None)
     parser.add_argument("-wn", "--write_nb", help="Write nb of products found to file?", type=str, default=True)
@@ -72,14 +69,6 @@ if __name__ == '__main__':
     # Add full path to footprints
     # todo: find a better way to do that!
     footprint = (pathlib.Path('/home/nbs/nbs_footprints') / args.area).with_suffix('.geojson')
-
-    # todo what to do with ingestion dates?
-    # If no ingestion date provided, query between sensing start and now
-    #if args.iyyyymmdd1:
-    #    query['ingestion_start'], query['ingestion_end'] = args.iyyyymmdd1, args.iyyyymmdd2
-    #else:
-    #    query['ingestion_start'] = sensing_start
-    #    query['ingestion_end'] = pd.to_datetime('today')
 
     # Connect to datahub
     myhub = sentinel_hub.connect_hub(cfg_datahub[args.datahub], cfg_datahub['credentials'])
