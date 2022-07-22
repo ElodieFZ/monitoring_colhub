@@ -41,9 +41,9 @@ for hub in $hubs; do
   for p in $products; do
     mkdir $monitdir/$year/$p
     if [[ "$hub" == "scihub" && "$p" == "S5p" ]]; then
-      python /home/nbs/colhub/script/request_colhub -p ${p} -d1 $d1 -d2 $d2 -wl True -ld ${monitdir}/$year/$p -dh s5phub -l ${logdir} -a ${area} -wn False
+      python /home/nbs/colhub/script/request_datahub -p ${p} -d1 $d1 -d2 $d2 -wl True -ld ${monitdir}/$year/$p -dh s5phub -l ${logdir} -a ${area} -wn False
     else
-      python /home/nbs/colhub/script/request_colhub -p ${p} -d1 $d1 -d2 $d2 -wl True -ld ${monitdir}/$year/$p -dh $hub -l ${logdir} -a ${area} -wn False
+      python /home/nbs/colhub/script/request_datahub -p ${p} -d1 $d1 -d2 $d2 -wl True -ld ${monitdir}/$year/$p -dh $hub -l ${logdir} -a ${area} -wn False
     fi
   done
 done
