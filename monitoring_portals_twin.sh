@@ -51,9 +51,9 @@ for hub in $hubs; do
   for area in $areas; do
     for p in $products; do
       if [[ "$hub" == 'scihub' && "$p" == "S5p" ]]; then
-        python /home/nbs/colhub/script/request_datahub -p ${p} -d1 $d1 -d2 $d2 -wn True -of ${monitdir}/products_in_scihub.csv -dh s5phub -l ${logdir} -a ${area}
+        python /home/nbs/colhub/script/request_datahub -p ${p} -d1 $d1 -d2 $d2 -wn True -on ${monitdir}/products_in_scihub.csv -dh s5phub -l ${logdir} -a ${area}
       else
-        python /home/nbs/colhub/script/request_datahub -p ${p} -d1 $d1 -d2 $d2 -wn True -of ${monitdir}/products_in_${hub}.csv -dh $hub -l ${logdir} -a ${area}
+        python /home/nbs/colhub/script/request_datahub -p ${p} -d1 $d1 -d2 $d2 -wn True -on ${monitdir}/products_in_${hub}.csv -dh $hub -l ${logdir} -a ${area}
       fi
     done
   done
@@ -62,7 +62,7 @@ done
 exit
 
 # CODA - Query only S3 data over AOI
-##python /home/nbs/colhub/script/request_datahub -p S3 -d1 $d1 -d2 $d2 -wn True -of ${monitdir}/products_in_coda.csv -dh coda -l ${logdir} -a colhub_aoi
+##python /home/nbs/colhub/script/request_datahub -p S3 -d1 $d1 -d2 $d2 -wn True -on ${monitdir}/products_in_coda.csv -dh coda -l ${logdir} -a colhub_aoi
 
 # For esa global and colhub AOI, request global data only
 hubs='esahub_global colhub_AOI'
@@ -73,7 +73,7 @@ products='S3'
 for hub in $hubs; do
   for area in $areas; do
     for p in $products; do
-      python /home/nbs/colhub/script/request_datahub -p ${p} -d1 $d1 -d2 $d2 -wn True -of ${monitdir}/products_in_${hub}.csv -dh $hub -l ${logdir} -a ${area}
+      python /home/nbs/colhub/script/request_datahub -p ${p} -d1 $d1 -d2 $d2 -wn True -on ${monitdir}/products_in_${hub}.csv -dh $hub -l ${logdir} -a ${area}
     done
   done
 done
@@ -84,8 +84,8 @@ products='S3'
 areas='global AOI'
 for area in $areas; do
   for p in $products; do
-    python /home/nbs/colhub/script/request_datahub -p ${p} -d1 $d1 -d2 $d2 -wn True -of ${monitdir}/products_in_BE_${p}_${area}.csv -dh BE_${p}_${area} -l ${logdir} -a global
+    python /home/nbs/colhub/script/request_datahub -p ${p} -d1 $d1 -d2 $d2 -wn True -on ${monitdir}/products_in_BE_${p}_${area}.csv -dh BE_${p}_${area} -l ${logdir} -a global
   done
 done
-python /home/nbs/colhub/script/request_datahub -p S2L1C -d1 $d1 -d2 $d2 -wn True -of ${monitdir}/products_in_BE_S2DEM_global.csv -dh BE_S2DEM_global -l ${logdir} -a global
+python /home/nbs/colhub/script/request_datahub -p S2L1C -d1 $d1 -d2 $d2 -wn True -on ${monitdir}/products_in_BE_S2DEM_global.csv -dh BE_S2DEM_global -l ${logdir} -a global
 

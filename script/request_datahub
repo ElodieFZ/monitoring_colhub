@@ -29,7 +29,7 @@ def parse_arguments():
     parser.add_argument("-wl", "--write_list", help="Write list of products found to file?", type=str, default=False)
     parser.add_argument("-ol", "--outfile_list", help="Text file where to write list of products found", type=pathlib.Path, default=None)
     parser.add_argument("-wn", "--write_nb", help="Write nb of products found to file?", type=str, default=True)
-    parser.add_argument("-of", "--nb_outfile", help="Text file where to write the nb of products found (a mode)", type=pathlib.Path, default=None)
+    parser.add_argument("-on", "--outfile_nb", help="Text file where to write nb of products found (append mode)", type=pathlib.Path, default=None)
     parser.add_argument("-dh", '--datahub', help=('datahub'), type=str, default="colhub_nbs")
     parser.add_argument("-l", '--logdir', help=('Log directory'), type=pathlib.Path, required=True)
     return parser.parse_args()
@@ -91,6 +91,7 @@ if __name__ == '__main__':
         else:
             logger.info(f"No products found")
 
+    # Write number of products_found to text file
     if args.write_nb:
-        pd.DataFrame(out).to_csv(args.nb_outfile, index=False, mode='a', header=None)
+        pd.DataFrame(out).to_csv(args.outfile_nb, index=False, mode='a', header=None)
 
