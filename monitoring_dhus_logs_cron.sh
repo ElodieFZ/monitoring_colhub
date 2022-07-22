@@ -9,7 +9,7 @@
 #$ -wd /lustre/storeB/project/NBS2/sentinel/production/NorwAREA/netCDFNBS_work/production/logs/ppi
 #$ -o /lustre/storeB/project/NBS2/sentinel/production/NorwAREA/netCDFNBS_work/production/logs/ppi
 
-export PYTHONPATH=/home/nbs/colhub:$PYTHONPATH
+export PYTHONPATH=/home/nbs/colhub:/home/nbs/colhub/tools:$PYTHONPATH
 source /modules/centos7/conda/Feb2021/etc/profile.d/conda.sh
 conda activate production-04-2021
 
