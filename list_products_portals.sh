@@ -43,7 +43,7 @@ for hub in $hubs; do
     mkdir -p $monitdir/$year/$p
     list_file=${monitdir}/$year/$p/products_in_${hub}_area_${area}.csv
     [[ "$hub" == "scihub" && "$p" == "S5p" ]] && hub='S5phub'
-    python /home/nbs/colhub/script/request_datahub -p ${p} -d1 $d1 -d2 $d2 -wl True -ol $list_file -dh $hub -l ${logdir} -a ${area} -wn False
+    python /home/nbs/colhub/script/request_datahub -p ${p} -d1 $d1 -d2 $d2 -wl -ol $list_file -dh $hub -l ${logdir} -a ${area}
   done
 done
 

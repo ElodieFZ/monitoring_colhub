@@ -26,9 +26,9 @@ def parse_arguments():
                         help='First sensing date (YYYYMMDD). Default is current day.')
     parser.add_argument('-d2', dest='syyyymmdd2', required=False,
                         help='Second sensing date (YYYYMMDD). Default is first date.')
-    parser.add_argument("-wl", "--write_list", help="Write list of products found to file?", type=str, default=False)
+    parser.add_argument("-wl", "--write_list", help="Write list of products found to file?", action='store_true')
     parser.add_argument("-ol", "--outfile_list", help="Text file where to write list of products found", type=pathlib.Path, default=None)
-    parser.add_argument("-wn", "--write_nb", help="Write nb of products found to file?", type=str, default=True)
+    parser.add_argument("-wn", "--write_nb", help="Write nb of products found to file?", action='store_true')
     parser.add_argument("-on", "--outfile_nb", help="Text file where to write nb of products found (append mode)", type=pathlib.Path, default=None)
     parser.add_argument("-dh", '--datahub', help=('datahub'), type=str, default="colhub_nbs")
     parser.add_argument("-l", '--logdir', help=('Log directory'), type=pathlib.Path, required=True)
